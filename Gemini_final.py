@@ -1,7 +1,7 @@
 import pandas as pd
 from google import genai
 
-API_KEY = "AIzaSyBmPKgzAXuRhhOwrzNFEqr-dfpVcAtCMqg"
+API_KEY = "gemini_key"
 EXCEL_PATH = "/Users/adwaitaboralkar/Desktop/Hacklytics26_datasets/Unique_jobs.xlsx"
 
 # Fix: header=None tells pandas the first row is data, not a header
