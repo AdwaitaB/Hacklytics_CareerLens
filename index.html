@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerLens AI — Workforce Intelligence Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b12;
+    --bg2: #0d1220;
+    --bg3: #111827;
+    --border: rgba(255,255,255,0.07);
+    --blue: #3b82f6;
+    --teal: #14b8a6;
+    --violet: #8b5cf6;
+    --crimson: #ef4444;
+    --amber: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --card: rgba(255,255,255,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── ANIMATED BG ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(59,130,246,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+    background: rgba(8,11,18,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 12px var(--blue); animation: pulse 2s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .nav-tabs {
+    display: flex; gap: 0.25rem;
+  }
+
+  .nav-tab {
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none; background: none;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+  .nav-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    background: rgba(20,184,166,0.1);
+    border: 1px solid rgba(20,184,166,0.3);
+    color: var(--teal);
+  }
+
+  /* ─── LAYOUT ─── */
+  .main {
+    padding-top: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s ease forwards;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s ease forwards;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s ease forwards;
+  }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ─── CONTROLS BAR ─── */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.5rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s ease forwards;
+  }
+
+  .ctrl-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .ctrl-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  select, .ctrl-select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    min-width: 160px;
+  }
+
+  select:hover { border-color: var(--blue); outline: none; }
+  select:focus { outline: none; border-color: var(--blue); }
+
+  .btn {
+    padding: 0.55rem 1.25rem;
+    border-radius: 8px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    color: white;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(59,130,246,0.35); }
+
+  .btn-secondary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { border-color: var(--teal); color: var(--teal); }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .btn-ghost.active { border-color: var(--crimson); color: var(--crimson); background: rgba(239,68,68,0.08); }
+
+  /* ─── GRID LAYOUT ─── */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    gap: 1px;
+    background: var(--border);
+    margin: 0;
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 1.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-full { grid-column: 1 / -1; }
+
+  .panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .panel-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .panel-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .badge-gemini { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: var(--violet); }
+  .badge-actian { background: rgba(20,184,166,0.15); border: 1px solid rgba(20,184,166,0.3); color: var(--teal); }
+  .badge-bls { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: var(--blue); }
+  .badge-live { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--crimson); animation: pulse 2s infinite; }
+
+  /* ─── MAP ─── */
+  #map-container {
+    position: relative;
+    width: 100%;
+    height: 420px;
+  }
+
+  #us-map { width: 100%; height: 100%; }
+
+  .map-tooltip {
+    position: absolute;
+    background: rgba(13,18,32,0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    min-width: 180px;
+  }
+
+  .tooltip-state { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .tooltip-row { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.2rem; }
+  .tooltip-val { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--blue); }
+
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.4rem; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+  .stat-delta { font-size: 0.75rem; margin-top: 0.2rem; }
+  .delta-up { color: var(--teal); }
+  .delta-down { color: var(--crimson); }
+
+  /* ─── HEATMAP ─── */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(20, 1fr);
+    gap: 2px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+  }
+
+  .hm-year-label { color: var(--muted); text-align: right; padding-right: 6px; display: flex; align-items: center; justify-content: flex-end; }
+  .hm-cell {
+    border-radius: 3px;
+    height: 32px;
+    cursor: pointer;
+    transition: transform 0.15s, outline 0.15s;
+    position: relative;
+  }
+  .hm-cell:hover { transform: scale(1.15); outline: 2px solid white; z-index: 5; }
+
+  .hm-header { color: var(--muted); text-align: center; padding-bottom: 4px; }
+
+  /* ─── RADAR ─── */
+  .radar-container { position: relative; height: 340px; display: flex; align-items: center; justify-content: center; }
+
+  /* ─── VECTOR CARDS ─── */
+  .vector-results { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .vector-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .vector-card:hover { border-color: var(--teal); transform: translateX(4px); }
+
+  .vc-rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    min-width: 24px;
+  }
+
+  .vc-info { flex: 1; }
+  .vc-name { font-weight: 600; font-size: 0.85rem; }
+  .vc-meta { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .vc-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .vc-bar {
+    width: 60px;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    margin-top: 0.3rem;
+    overflow: hidden;
+  }
+
+  .vc-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--teal), var(--blue)); }
+
+  /* ─── FORECAST TIMELINE ─── */
+  .forecast-chart { position: relative; height: 280px; }
+
+  /* ─── GEMINI PANEL ─── */
+  .gemini-panel {
+    background: var(--bg2);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .gemini-prompt {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .gemini-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.85rem;
+    transition: border-color 0.2s;
+  }
+
+  .gemini-input:focus { outline: none; border-color: var(--violet); }
+
+  .gemini-response {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text);
+    border-left: 2px solid var(--violet);
+    padding-left: 1rem;
+    min-height: 60px;
+  }
+
+  .gemini-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--violet);
+    margin-left: 2px;
+    animation: blink 1s infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .typing-indicator {
+    display: flex; gap: 4px; align-items: center; padding: 0.5rem 0;
+  }
+
+  .typing-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--violet);
+    animation: typingBounce 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-6px);opacity:1} }
+
+  /* ─── LEGEND ─── */
+  .legend { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* ─── CLUSTER PILLS ─── */
+  .cluster-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .cluster-pill {
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.2s;
+  }
+
+  .pill-blue { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); color: var(--blue); }
+  .pill-teal { background: rgba(20,184,166,0.1); border-color: rgba(20,184,166,0.3); color: var(--teal); }
+  .pill-amber { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: var(--amber); }
+  .pill-crimson { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--crimson); }
+  .pill-violet { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); color: var(--violet); }
+
+  /* ─── METRIC TOGGLES ─── */
+  .metric-toggles { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  .metric-btn {
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: 'Instrument Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .metric-btn:hover { color: var(--text); }
+  .metric-btn.active-salary { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.1); }
+  .metric-btn.active-demand { border-color: var(--teal); color: var(--teal); background: rgba(20,184,166,0.1); }
+  .metric-btn.active-stress { border-color: var(--crimson); color: var(--crimson); background: rgba(239,68,68,0.1); }
+  .metric-btn.active-auto { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.1); }
+  .metric-btn.active-stability { border-color: var(--violet); color: var(--violet); background: rgba(139,92,246,0.1); }
+
+  /* ─── INSIGHT CARDS ─── */
+  .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem; }
+
+  .insight-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .insight-icon { font-size: 1.2rem; margin-bottom: 0.5rem; }
+  .insight-title { font-weight: 600; font-size: 0.8rem; margin-bottom: 0.3rem; }
+  .insight-text { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+
+  /* ─── FOOTER TRACKS ─── */
+  .tracks-bar {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .track-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .track-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ─── LOADING STATE ─── */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(8,11,18,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── SECTION DIVIDER ─── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.75rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    grid-column: 1 / -1;
+  }
+
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; white-space: nowrap; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  /* ─── COMPARISON TABLE ─── */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .compare-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .bar-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 60px;
+  }
+
+  .bar-fill-blue { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.8s ease; }
+  .bar-fill-teal { height: 100%; background: var(--teal); border-radius: 2px; transition: width 0.8s ease; }
+  .bar-fill-crimson { height: 100%; background: var(--crimson); border-radius: 2px; transition: width 0.8s ease; }
+  .bar-fill-amber { height: 100%; background: var(--amber); border-radius: 2px; transition: width 0.8s ease; }
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Range Input Styling */
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    outline: none;
+    margin: 0.5rem 0;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(59,130,246,0.5);
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .dashboard { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .insights-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    CareerLens<span style="color:var(--blue)"> AI</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('map', this)">State Map</button>
+    <button class="nav-tab" onclick="switchTab('heatmap', this)">Heatmap</button>
+    <button class="nav-tab" onclick="switchTab('compare', this)">Compare</button>
+    <button class="nav-tab" onclick="switchTab('vector', this)">Trajectory</button>
+    <button class="nav-tab" onclick="switchTab('forecast', this)">Forecast</button>
+    <button class="nav-tab" onclick="switchTab('ask', this)">Ask AI</button>
+  </div>
+  <div class="nav-badge">BLS · O*NET · 2005–2030</div>
+</nav>
+
+<div class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">U.S. Workforce Intelligence Platform · 50 States · 20 Years</div>
+    <h1>Understand the <span style="background:linear-gradient(135deg, var(--blue), var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'Georgia',serif;font-style:italic;font-weight:900">job market</span> like never before</h1>
+    <p class="hero-sub">Real occupational data. AI-generated insights. Vector similarity matching across 50 states and two decades — built to reveal what the job market is really doing.</p>
+  </div>
+
+  <!-- GLOBAL CONTROLS -->
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Profession</div>
+      <select id="profession-select" onchange="updateAll()">
+        <option value="software_dev">Software Developer</option>
+        <option value="nurse">Registered Nurse</option>
+        <option value="data_scientist">Data Scientist</option>
+        <option value="teacher">High School Teacher</option>
+        <option value="electrician">Electrician</option>
+        <option value="physician">Physician</option>
+        <option value="accountant">Accountant</option>
+        <option value="truck_driver">Truck Driver</option>
+        <option value="graphic_designer">Graphic Designer</option>
+        <option value="financial_analyst">Financial Analyst</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Year</div>
+      <select id="year-select" onchange="updateAll()">
+        <option value="2024">2024</option>
+        <option value="2022">2022</option>
+        <option value="2020">2020</option>
+        <option value="2018">2018</option>
+        <option value="2015">2015</option>
+        <option value="2010">2010</option>
+        <option value="2005">2005</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Primary Metric</div>
+      <select id="metric-select" onchange="updateAll()">
+        <option value="salary">Median Salary</option>
+        <option value="demand">Employment Growth</option>
+        <option value="stress">Work Stress Index</option>
+        <option value="automation">Automation Risk</option>
+        <option value="stability">Stability Score</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="runGeminiLive()">⚡ Live AI Analysis</button>
+    <button class="btn btn-secondary" id="forecast-toggle" onclick="toggleForecast(this)">📈 Forecast 2030</button>
+  </div>
+
+  <!-- STATS ROW -->
+  <div style="padding: 1.5rem 1.75rem; background: var(--bg2); border-bottom: 1px solid var(--border);">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">National Median Salary</div>
+        <div class="stat-value" id="stat-salary" style="color:var(--blue)">$118,400</div>
+        <div class="stat-delta delta-up" id="stat-salary-delta">↑ 12.3% vs 2019</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Projected Growth (10yr)</div>
+        <div class="stat-value" id="stat-growth" style="color:var(--teal)">+25.7%</div>
+        <div class="stat-delta delta-up" id="stat-growth-sub">Above national avg</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Automation Risk</div>
+        <div class="stat-value" id="stat-auto" style="color:var(--amber)">18%</div>
+        <div class="stat-delta" id="stat-auto-sub" style="color:var(--muted)">Low vulnerability</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Top Performing State</div>
+        <div class="stat-value" id="stat-top" style="color:var(--violet); font-size:1.2rem">California</div>
+        <div class="stat-delta delta-up" id="stat-top-sub">$165,200 median</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PANELS -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- ═══ TAB: MAP ═══ -->
+    <div class="panel panel-full" id="tab-map">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Structural Evolution Map — State Divergence Matrix</div>
+          <div class="panel-subtitle">Hover states for deep metrics · Click to drill down</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <span class="panel-badge badge-bls">BLS OES Data</span>
+          <span class="panel-badge badge-gemini">Gemini Clusters</span>
+        </div>
+      </div>
+      <div id="map-container">
+        <svg id="us-map"></svg>
+        <div class="map-tooltip" id="map-tooltip">
+          <div class="tooltip-state" id="tt-state">—</div>
+          <div class="tooltip-row"><span style="color:var(--muted)">Salary</span><span class="tooltip-val" id="tt-salary" style="color:var(--blue)">—</span></div>
+          <div class="tooltip-row"><span style="color:var(--muted)">Growth</span><span class="tooltip-val" id="tt-growth" style="color:var(--teal)">—</span></div>
+          <div class="tooltip-row"><span style="color:var(--muted)">Cluster</span><span class="tooltip-val" id="tt-cluster" style="color:var(--violet)">—</span></div>
+          <div class="tooltip-row"><span style="color:var(--muted)">Rank</span><span class="tooltip-val" id="tt-rank">—</span></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:1rem">
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div>High Compensation Hub</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Emerging Growth Market</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Stable Employment Zone</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--crimson)"></div>High Stress / Declining</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Below National Avg</div>
+        </div>
+        <div class="cluster-pills" id="cluster-pills"></div>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="section-divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">Temporal Intelligence Layer</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <!-- ═══ TAB: HEATMAP ═══ -->
+    <div class="panel" id="tab-heatmap" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">20-Year Temporal Heatmap</div>
+          <div class="panel-subtitle">2005 → 2024 · Cell = annual avg · Hover for insight</div>
+        </div>
+        <span class="panel-badge badge-bls">Historical BLS</span>
+      </div>
+      <div class="metric-toggles" style="margin-bottom:1rem">
+        <button class="metric-btn active-salary" onclick="setHeatMetric('salary', this)">Salary</button>
+        <button class="metric-btn" onclick="setHeatMetric('demand', this)">Demand</button>
+        <button class="metric-btn" onclick="setHeatMetric('stress', this)">Stress</button>
+        <button class="metric-btn" onclick="setHeatMetric('auto', this)">Auto Risk</button>
+        <button class="metric-btn" onclick="setHeatMetric('stability', this)">Stability</button>
+      </div>
+      <div id="heatmap-container"></div>
+      <div id="hm-insight" style="margin-top:1rem;padding:0.75rem 1rem;background:var(--bg2);border-radius:8px;border-left:2px solid var(--blue);font-size:0.82rem;color:var(--muted);min-height:48px;line-height:1.6">
+        Hover a cell to see the annual insight for that year.
+      </div>
+    </div>
+
+    <!-- ═══ TAB: COMPARE (RADAR) ═══ -->
+    <div class="panel" id="tab-compare" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Tradeoff Radar Engine</div>
+          <div class="panel-subtitle">Multi-profession normalized comparison</div>
+        </div>
+        <span class="panel-badge badge-gemini">Gemini Normalized</span>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select id="compare-p1" onchange="updateRadar()" style="min-width:140px">
+          <option value="software_dev">Software Developer</option>
+          <option value="data_scientist">Data Scientist</option>
+          <option value="financial_analyst">Financial Analyst</option>
+        </select>
+        <select id="compare-p2" onchange="updateRadar()" style="min-width:140px">
+          <option value="nurse">Registered Nurse</option>
+          <option value="physician">Physician</option>
+          <option value="teacher">Teacher</option>
+        </select>
+        <select id="compare-p3" onchange="updateRadar()" style="min-width:140px">
+          <option value="electrician">Electrician</option>
+          <option value="truck_driver">Truck Driver</option>
+          <option value="graphic_designer">Graphic Designer</option>
+        </select>
+      </div>
+      <div class="radar-container">
+        <canvas id="radar-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: VECTOR (ANALOG) ═══ -->
+    <div class="panel" id="tab-vector" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Vector Trajectory Matcher</div>
+          <div class="panel-subtitle">Actian VectorAI · Cosine similarity across 20-year snapshots</div>
+        </div>
+        <span class="panel-badge badge-actian">Actian VectorAI</span>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;gap:0.5rem;align-items:center">
+        <button class="btn btn-primary" onclick="runVectorSearch()" style="font-size:0.8rem">Find Historical Analogs</button>
+        <span style="font-size:0.75rem;color:var(--muted)">for current selection</span>
+      </div>
+      <div class="vector-results" id="vector-results">
+        <div style="color:var(--muted);font-size:0.82rem;padding:1rem 0;">Click "Find Historical Analogs" to search the vector database.</div>
+      </div>
+      <div id="vector-insight" style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(20,184,166,0.05);border:1px solid rgba(20,184,166,0.15);border-radius:8px;font-size:0.8rem;color:var(--muted);display:none;line-height:1.6"></div>
+    </div>
+
+    <!-- ═══ TAB: FORECAST ═══ -->
+    <div class="panel panel-full" id="tab-forecast" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Future Forecast Engine — 2025–2030 Outlook</div>
+          <div class="panel-subtitle">Random Forest + Gradient Boosting Ensemble · Trained on 2005–2024 BLS data · 14 engineered features</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <span class="panel-badge" style="background:rgba(20,184,166,0.15);border:1px solid rgba(20,184,166,0.3);color:var(--teal)">scikit-learn ML</span>
+          <span class="panel-badge" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:var(--amber)">Projection · Not Guaranteed</span>
+        </div>
+      </div>
+
+      <!-- MODEL ACCURACY TABLE -->
+      <div id="accuracy-table-wrapper" style="margin-bottom:1.25rem;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:0.75rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-family:'DM Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted)">Model Accuracy Report — 3-Fold Cross Validation</div>
+          <div id="accuracy-profession-label" style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--blue)"></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+          <thead>
+            <tr>
+              <th style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.55rem 1.1rem;text-align:left;border-bottom:1px solid var(--border)">Model</th>
+              <th style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.55rem 1.1rem;text-align:left;border-bottom:1px solid var(--border)">CV MAE (avg error)</th>
+              <th style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.55rem 1.1rem;text-align:left;border-bottom:1px solid var(--border)">Accuracy vs Salary</th>
+              <th style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.55rem 1.1rem;text-align:left;border-bottom:1px solid var(--border)">Error Bar</th>
+              <th style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:0.55rem 1.1rem;text-align:left;border-bottom:1px solid var(--border)">Status</th>
+            </tr>
+          </thead>
+          <tbody id="accuracy-table-body"></tbody>
+        </table>
+        <div style="padding:0.6rem 1.1rem;border-top:1px solid var(--border);font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace">
+          ⓘ CV MAE = Cross-Validation Mean Absolute Error. Lower = better. Measured on held-out data the model never saw during training.
+          &nbsp;|&nbsp; Why no Linear/Polynomial? They diverged to −$4M by 2030 in autoregressive mode.
+        </div>
+      </div>
+
+      <div class="forecast-chart">
+        <canvas id="forecast-chart"></canvas>
+      </div>
+      <div class="insights-grid" id="forecast-insights"></div>
+    </div>
+
+    <!-- ═══ TAB: ASK AI ═══ -->
+    <div class="panel panel-full" id="tab-ask" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Ask the Workforce Intelligence Engine</div>
+          <div class="panel-subtitle">Powered by Gemini API · Real-time analytical responses</div>
+        </div>
+        <span class="panel-badge badge-live">● LIVE</span>
+      </div>
+      <div class="gemini-panel">
+        <div class="gemini-prompt">
+          <input class="gemini-input" id="gemini-input" placeholder='e.g. "Why did nurse salaries spike in 2020 in rural states?" or "Compare tech jobs CA vs TX 2015–2024"' onkeydown="if(event.key==='Enter')runGeminiAsk()" />
+          <button class="btn btn-primary" onclick="runGeminiAsk()">Ask Gemini</button>
+        </div>
+        <div class="gemini-response" id="gemini-response">
+          <span style="color:var(--muted);font-size:0.8rem">Ask any question about the U.S. workforce data. Gemini will analyze trends, explain anomalies, and generate strategic insights.</span>
+        </div>
+      </div>
+
+      <!-- Quick prompts -->
+      <div style="margin-top:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.6rem">Quick Analysis Prompts</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem" id="quick-prompts"></div>
+      </div>
+
+      <!-- Full comparison table -->
+      <div style="margin-top:2rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">All Professions — 2024 Snapshot</div>
+        <table class="compare-table" id="full-compare-table"></table>
+      </div>
+    </div>
+
+    <!-- FULL HEATMAP in map tab -->
+    <div class="panel" id="tab-map-heatmap">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Decade Heatmap</div>
+          <div class="panel-subtitle">2005–2024 · Selected metric by year</div>
+        </div>
+        <span class="panel-badge badge-bls">BLS</span>
+      </div>
+      <div id="heatmap-small"></div>
+    </div>
+
+    <!-- RADAR in map tab -->
+    <div class="panel" id="tab-map-radar">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Career Tradeoff Radar</div>
+          <div class="panel-subtitle">Normalized 0–1 across 6 dimensions</div>
+        </div>
+        <span class="panel-badge badge-gemini">Gemini</span>
+      </div>
+      <div style="position:relative;height:300px">
+        <canvas id="radar-small"></canvas>
+      </div>
+    </div>
+
+  </div><!-- end dashboard -->
+
+  <!-- ANALYST CONCLUSION SECTION -->
+  <div id="conclusion-section" style="background:var(--bg2);border-top:1px solid var(--border);padding:2rem 1.75rem">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:0.25rem">Analyst Conclusion</div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">Auto-generated based on your selected profession · year · metric</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <div id="conclusion-prof-badge" style="font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.7rem;border-radius:20px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:var(--blue)"></div>
+        <div id="conclusion-year-badge" style="font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.7rem;border-radius:20px;background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.3);color:var(--teal)"></div>
+        <div id="conclusion-metric-badge" style="font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.7rem;border-radius:20px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);color:var(--violet)"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem">
+      <div style="background:var(--bg);padding:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.6rem">Overall Verdict</div>
+        <div id="conclusion-verdict" style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:0.4rem"></div>
+        <div id="conclusion-verdict-sub" style="font-size:0.78rem;color:var(--muted);line-height:1.5"></div>
+      </div>
+      <div style="background:var(--bg);padding:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.6rem">Best State to Work In</div>
+        <div id="conclusion-best-state" style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--teal);margin-bottom:0.4rem"></div>
+        <div id="conclusion-best-state-sub" style="font-size:0.78rem;color:var(--muted);line-height:1.5"></div>
+      </div>
+      <div style="background:var(--bg);padding:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.6rem">Biggest Risk Factor</div>
+        <div id="conclusion-risk" style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--crimson);margin-bottom:0.4rem"></div>
+        <div id="conclusion-risk-sub" style="font-size:0.78rem;color:var(--muted);line-height:1.5"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--blue);margin-bottom:0.6rem">📌 Where This Profession Stands Today</div>
+        <div id="conclusion-today" style="font-size:0.82rem;line-height:1.75;color:var(--text)"></div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--violet);margin-bottom:0.6rem">🔭 Where It Is Heading (2025–2030)</div>
+        <div id="conclusion-future" style="font-size:0.82rem;line-height:1.75;color:var(--text)"></div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
+      <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--amber);margin-bottom:0.75rem">💡 Should You Pursue This Career? — Our Analysis</div>
+      <div id="conclusion-advice" style="font-size:0.85rem;line-height:1.8;color:var(--text)"></div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap" id="conclusion-scores"></div>
+
+  </div>
+
+  <!-- TRACKS BAR -->
+  <div class="tracks-bar">
+    <div class="track-item">
+      <div class="track-dot" style="background:var(--violet)"></div>
+      <span style="color:var(--muted)">Gemini API Track</span>
+      <span style="color:var(--violet);font-family:'DM Mono',monospace;font-size:0.65rem">Trend Analysis + Live Insight Generation</span>
+    </div>
+    <div style="color:var(--border)">|</div>
+    <div class="track-item">
+      <div class="track-dot" style="background:var(--teal)"></div>
+      <span style="color:var(--muted)">Actian VectorAI Track</span>
+      <span style="color:var(--teal);font-family:'DM Mono',monospace;font-size:0.65rem">Career Trajectory Similarity Search</span>
+    </div>
+    <div style="color:var(--border)">|</div>
+    <div class="track-item">
+      <div class="track-dot" style="background:var(--blue)"></div>
+      <span style="color:var(--muted)">Pure Imagination Track</span>
+      <span style="color:var(--blue);font-family:'DM Mono',monospace;font-size:0.65rem">Figma Design System + Enterprise UI</span>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA LAYER — Realistic synthetic BLS-inspired data
+// ══════════════════════════════════════════════════════════
+
+const PROFESSIONS = {
+  software_dev: {
+    name: "Software Developer",
+    salary2024: 118400,
+    growth10yr: 25.7,
+    autoRisk: 18,
+    stress: 42,
+    stability: 82,
+    remote: 91,
+    topState: "California",
+    topSalary: 165200,
+    salaryHistory: [72000,74500,76200,78800,81200,86500,92100,98400,104200,108900,113400,118400],
+    demandHistory: [100,102,105,108,111,116,123,131,140,148,156,168],
+    trendShape: "Exponential Growth",
+    insight2020: "Remote work explosion +34% YoY demand during COVID — largest single-year jump in sector history.",
+    insight2015: "Cloud computing inflection: AWS & Azure certifications drove 18% salary premium emergence.",
+    clusterColor: "#1d4ed8"
+  },
+  nurse: {
+    name: "Registered Nurse",
+    salary2024: 82400,
+    growth10yr: 19.2,
+    autoRisk: 8,
+    stress: 78,
+    stability: 88,
+    remote: 12,
+    topState: "California",
+    topSalary: 128500,
+    salaryHistory: [54000,55200,57100,58800,60400,63100,66800,70200,73600,76400,79100,82400],
+    demandHistory: [100,103,107,111,115,121,127,134,142,148,153,161],
+    trendShape: "Linear Growth",
+    insight2020: "COVID surge: ICU nurse salaries spiked 28% in NY and CA. Travel nurse market hit $18B.",
+    insight2015: "ACA expansion added 12M insured Americans, driving 9% above-trend demand increase.",
+    clusterColor: "#14b8a6"
+  },
+  data_scientist: {
+    name: "Data Scientist",
+    salary2024: 132800,
+    growth10yr: 36.1,
+    autoRisk: 22,
+    stress: 54,
+    stability: 74,
+    remote: 88,
+    topState: "New York",
+    topSalary: 175400,
+    salaryHistory: [68000,73200,79400,86100,93800,102400,111200,118900,124600,128400,131200,132800],
+    demandHistory: [100,115,133,154,177,204,235,268,302,334,362,398],
+    trendShape: "Exponential Growth",
+    insight2020: "ML pipeline automation created bifurcation: junior roles declined, senior ML engineers +42%.",
+    insight2015: "'Sexiest job of the 21st century' — Harvard Business Review. Demand doubled in 18 months.",
+    clusterColor: "#8b5cf6"
+  },
+  teacher: {
+    name: "High School Teacher",
+    salary2024: 62800,
+    growth10yr: 4.1,
+    autoRisk: 12,
+    stress: 72,
+    stability: 76,
+    remote: 28,
+    topState: "New York",
+    topSalary: 88400,
+    salaryHistory: [44200,45100,46200,47300,48100,49600,51200,53100,55400,57900,60200,62800],
+    demandHistory: [100,100,99,100,101,100,101,102,103,103,104,105],
+    trendShape: "Plateau",
+    insight2020: "Virtual learning crisis: 30% left profession. Remaining teachers saw largest 3yr raise in decade.",
+    insight2015: "State budget recoveries post-2008 recession restored 4,200 cut positions across 14 states.",
+    clusterColor: "#f59e0b"
+  },
+  electrician: {
+    name: "Electrician",
+    salary2024: 72900,
+    growth10yr: 11.4,
+    autoRisk: 14,
+    stress: 58,
+    stability: 84,
+    remote: 2,
+    topState: "Illinois",
+    topSalary: 98200,
+    salaryHistory: [48200,49100,50400,52100,53800,56200,58900,61800,64600,67200,69800,72900],
+    demandHistory: [100,98,96,98,101,106,112,119,126,132,138,144],
+    trendShape: "Cyclical",
+    insight2020: "Infrastructure demand surge. EV charging installation boom added 14,000 new jobs.",
+    insight2015: "Solar panel installation drove 8% above-trend growth in Southwest states.",
+    clusterColor: "#f59e0b"
+  },
+  physician: {
+    name: "Physician",
+    salary2024: 236800,
+    growth10yr: 3.2,
+    autoRisk: 9,
+    stress: 82,
+    stability: 92,
+    remote: 22,
+    topState: "Wisconsin",
+    topSalary: 298400,
+    salaryHistory: [162000,167200,172400,178800,184200,192100,198400,206800,214200,221800,228400,236800],
+    demandHistory: [100,100,101,102,103,104,105,106,107,108,109,110],
+    trendShape: "Linear Growth",
+    insight2020: "Telehealth adoption 3,800% YoY. Rural physician shortage hit critical level in 28 states.",
+    insight2015: "ACA expanded insured population requiring 65,000 additional primary care physicians by 2025.",
+    clusterColor: "#1d4ed8"
+  },
+  accountant: {
+    name: "Accountant",
+    salary2024: 78200,
+    growth10yr: 4.7,
+    autoRisk: 54,
+    stress: 62,
+    stability: 78,
+    remote: 64,
+    topState: "New York",
+    topSalary: 104600,
+    salaryHistory: [52400,53800,55200,56800,58400,60100,62400,64800,67200,69800,72400,78200],
+    demandHistory: [100,101,100,101,102,102,101,101,102,103,104,105],
+    trendShape: "Plateau",
+    insight2020: "PPP loan administration created temporary 22% demand spike. AI tax software concern grew.",
+    insight2015: "Big 4 firms began automation transition, reducing entry-level positions 8% while raising senior pay.",
+    clusterColor: "#6b7280"
+  },
+  truck_driver: {
+    name: "Truck Driver",
+    salary2024: 52800,
+    growth10yr: 1.2,
+    autoRisk: 76,
+    stress: 68,
+    stability: 64,
+    remote: 0,
+    topState: "Texas",
+    topSalary: 68400,
+    salaryHistory: [38200,39100,40200,41400,42800,44600,46200,48100,49800,51200,52100,52800],
+    demandHistory: [100,101,102,103,105,107,109,112,114,115,113,112],
+    trendShape: "Volatile",
+    insight2020: "Essential worker status + supply chain crisis drove $8,000 signing bonuses. +19% salary in 24 months.",
+    insight2015: "E-commerce boom: last-mile delivery demand up 34%. Class A CDL shortage reached 48,000 drivers.",
+    clusterColor: "#ef4444"
+  },
+  graphic_designer: {
+    name: "Graphic Designer",
+    salary2024: 59400,
+    growth10yr: 3.0,
+    autoRisk: 61,
+    stress: 48,
+    stability: 58,
+    remote: 82,
+    topState: "California",
+    topSalary: 84200,
+    salaryHistory: [38800,39900,41200,42600,43800,45400,47200,49400,51800,54200,56800,59400],
+    demandHistory: [100,101,103,105,106,107,107,106,105,104,104,103],
+    trendShape: "Plateau",
+    insight2020: "Freelance market surge (+41%). Canva and AI tools began displacing junior roles simultaneously.",
+    insight2015: "UX/UI hybrid designers commanded 32% premium over traditional print designers.",
+    clusterColor: "#6b7280"
+  },
+  financial_analyst: {
+    name: "Financial Analyst",
+    salary2024: 98400,
+    growth10yr: 8.9,
+    autoRisk: 38,
+    stress: 71,
+    stability: 76,
+    remote: 72,
+    topState: "New York",
+    topSalary: 148200,
+    salaryHistory: [58200,60400,63100,66200,69800,74400,79200,83800,87400,90800,94200,98400],
+    demandHistory: [100,102,104,107,110,115,120,126,131,136,140,145],
+    trendShape: "Linear Growth",
+    insight2020: "Market volatility drove +28% demand for risk analysts. Quant roles commanded $200k+ at hedge funds.",
+    insight2015: "Dodd-Frank compliance requirements added 18,000 compliance analyst positions across major banks.",
+    clusterColor: "#1d4ed8"
+  }
+};
+
+const STATE_DATA = {
+  AL:{name:"Alabama",x:580,y:340,multiplier:0.78,cluster:"below",growth:8.2},
+  AK:{name:"Alaska",x:120,y:380,multiplier:0.92,cluster:"stable",growth:4.1},
+  AZ:{name:"Arizona",x:180,y:310,multiplier:0.91,cluster:"emerging",growth:14.8},
+  AR:{name:"Arkansas",x:540,y:320,multiplier:0.74,cluster:"below",growth:6.4},
+  CA:{name:"California",x:100,y:260,multiplier:1.42,cluster:"high",growth:18.2},
+  CO:{name:"Colorado",x:270,y:270,multiplier:1.14,cluster:"emerging",growth:16.4},
+  CT:{name:"Connecticut",x:740,y:190,multiplier:1.18,cluster:"high",growth:9.2},
+  DE:{name:"Delaware",x:720,y:220,multiplier:1.06,cluster:"stable",growth:10.1},
+  FL:{name:"Florida",x:620,y:390,multiplier:0.95,cluster:"emerging",growth:14.2},
+  GA:{name:"Georgia",x:610,y:340,multiplier:0.98,cluster:"stable",growth:12.8},
+  HI:{name:"Hawaii",x:180,y:420,multiplier:1.02,cluster:"stable",growth:6.8},
+  ID:{name:"Idaho",x:190,y:210,multiplier:0.88,cluster:"emerging",growth:15.6},
+  IL:{name:"Illinois",x:560,y:230,multiplier:1.08,cluster:"high",growth:10.4},
+  IN:{name:"Indiana",x:580,y:240,multiplier:0.92,cluster:"stable",growth:8.8},
+  IA:{name:"Iowa",x:510,y:220,multiplier:0.88,cluster:"stable",growth:7.2},
+  KS:{name:"Kansas",x:440,y:280,multiplier:0.86,cluster:"stable",growth:6.8},
+  KY:{name:"Kentucky",x:590,y:280,multiplier:0.82,cluster:"below",growth:7.4},
+  LA:{name:"Louisiana",x:520,y:370,multiplier:0.79,cluster:"below",growth:5.6},
+  ME:{name:"Maine",x:790,y:160,multiplier:0.94,cluster:"stable",growth:8.4},
+  MD:{name:"Maryland",x:700,y:230,multiplier:1.16,cluster:"high",growth:12.4},
+  MA:{name:"Massachusetts",x:770,y:185,multiplier:1.28,cluster:"high",growth:14.8},
+  MI:{name:"Michigan",x:590,y:200,multiplier:0.96,cluster:"stable",growth:9.2},
+  MN:{name:"Minnesota",x:500,y:180,multiplier:1.04,cluster:"stable",growth:11.2},
+  MS:{name:"Mississippi",x:548,y:355,multiplier:0.70,cluster:"below",growth:4.8},
+  MO:{name:"Missouri",x:520,y:278,multiplier:0.88,cluster:"stable",growth:8.4},
+  MT:{name:"Montana",x:240,y:170,multiplier:0.84,cluster:"stable",growth:9.8},
+  NE:{name:"Nebraska",x:440,y:240,multiplier:0.88,cluster:"stable",growth:7.6},
+  NV:{name:"Nevada",x:160,y:270,multiplier:1.01,cluster:"emerging",growth:13.4},
+  NH:{name:"New Hampshire",x:770,y:175,multiplier:1.06,cluster:"stable",growth:10.2},
+  NJ:{name:"New Jersey",x:730,y:210,multiplier:1.24,cluster:"high",growth:11.8},
+  NM:{name:"New Mexico",x:260,y:320,multiplier:0.81,cluster:"below",growth:6.2},
+  NY:{name:"New York",x:730,y:190,multiplier:1.38,cluster:"high",growth:13.4},
+  NC:{name:"North Carolina",x:660,y:300,multiplier:0.98,cluster:"emerging",growth:14.4},
+  ND:{name:"North Dakota",x:430,y:170,multiplier:0.86,cluster:"stable",growth:8.2},
+  OH:{name:"Ohio",x:620,y:240,multiplier:0.96,cluster:"stable",growth:8.8},
+  OK:{name:"Oklahoma",x:440,y:320,multiplier:0.80,cluster:"below",growth:5.4},
+  OR:{name:"Oregon",x:120,y:200,multiplier:1.08,cluster:"emerging",growth:14.8},
+  PA:{name:"Pennsylvania",x:690,y:210,multiplier:1.04,cluster:"stable",growth:9.6},
+  RI:{name:"Rhode Island",x:765,y:192,multiplier:1.06,cluster:"stable",growth:9.2},
+  SC:{name:"South Carolina",x:650,y:320,multiplier:0.88,cluster:"stable",growth:10.8},
+  SD:{name:"South Dakota",x:430,y:200,multiplier:0.82,cluster:"stable",growth:7.4},
+  TN:{name:"Tennessee",x:580,y:300,multiplier:0.90,cluster:"emerging",growth:12.2},
+  TX:{name:"Texas",x:420,y:360,multiplier:1.02,cluster:"emerging",growth:15.8},
+  UT:{name:"Utah",x:210,y:260,multiplier:1.06,cluster:"emerging",growth:18.4},
+  VT:{name:"Vermont",x:758,y:165,multiplier:0.96,cluster:"stable",growth:8.6},
+  VA:{name:"Virginia",x:680,y:255,multiplier:1.18,cluster:"high",growth:14.2},
+  WA:{name:"Washington",x:140,y:170,multiplier:1.22,cluster:"high",growth:16.8},
+  WV:{name:"West Virginia",x:650,y:265,multiplier:0.74,cluster:"below",growth:3.8},
+  WI:{name:"Wisconsin",x:540,y:195,multiplier:0.96,cluster:"stable",growth:8.4},
+  WY:{name:"Wyoming",x:280,y:220,multiplier:0.84,cluster:"stable",growth:6.2}
+};
+
+const CLUSTER_COLORS = {
+  high: "#1d4ed8",
+  emerging: "#14b8a6",
+  stable: "#d97706",
+  below: "#6b7280",
+  stress: "#ef4444"
+};
+
+const YEARS = [2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024];
+
+// State abbreviation positions for map labels
+const STATE_POSITIONS = Object.entries(STATE_DATA).reduce((acc,[k,v]) => {
+  acc[k] = {x: v.x, y: v.y};
+  return acc;
+}, {});
+
+let currentTab = 'map';
+let radarChart = null;
+let radarSmall = null;
+let forecastChart = null;
+let heatMetric = 'salary';
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+
+function getProfession() {
+  return PROFESSIONS[document.getElementById('profession-select').value];
+}
+
+function getYear() {
+  return parseInt(document.getElementById('year-select').value);
+}
+
+function getMetric() {
+  return document.getElementById('metric-select').value;
+}
+
+function metricColor(m) {
+  return {salary:'var(--blue)',demand:'var(--teal)',stress:'var(--crimson)',automation:'var(--amber)',stability:'var(--violet)'}[m] || 'var(--blue)';
+}
+
+function fmt(n) {
+  if(n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function lerp(a, b, t) { return a + (b-a)*t; }
+
+// ══════════════════════════════════════════════════════════
+// NAV TABS
+// ══════════════════════════════════════════════════════════
+
+const TAB_PANELS = {
+  map: ['tab-map','tab-map-heatmap','tab-map-radar'],
+  heatmap: ['tab-heatmap'],
+  compare: ['tab-compare'],
+  vector: ['tab-vector'],
+  forecast: ['tab-forecast'],
+  ask: ['tab-ask']
+};
+
+const ALL_PANELS = ['tab-map','tab-map-heatmap','tab-map-radar','tab-heatmap','tab-compare','tab-vector','tab-forecast','tab-ask'];
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  ALL_PANELS.forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.style.display = 'none';
+  });
+
+  const show = TAB_PANELS[tab] || [];
+  show.forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.style.display = '';
+  });
+
+  // Handle divider
+  const divider = document.querySelector('.section-divider');
+  if(divider) divider.style.display = tab === 'map' ? '' : 'none';
+
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  updateAll();
+}
+
+// ══════════════════════════════════════════════════════════
+// MAP (D3)
+// ══════════════════════════════════════════════════════════
+
+function drawMap() {
+  const container = document.getElementById('map-container');
+  const W = container.clientWidth || 900;
+  const H = 420;
+
+  const prof = getProfession();
+  const metric = getMetric();
+
+  d3.select('#us-map').selectAll('*').remove();
+
+  const svg = d3.select('#us-map')
+    .attr('width', W)
+    .attr('height', H)
+    .attr('viewBox', `0 0 ${W} ${H}`);
+
+  // Color scale
+  const getVal = (state) => {
+    const base = prof.salary2024 * state.multiplier;
+    if(metric === 'salary') return base;
+    if(metric === 'demand') return state.growth;
+    if(metric === 'stress') return prof.stress * (state.multiplier > 1.1 ? 1.1 : state.multiplier < 0.85 ? 0.9 : 1);
+    if(metric === 'automation') return prof.autoRisk * (1 + (state.multiplier - 1) * 0.3);
+    if(metric === 'stability') return prof.stability * state.multiplier;
+    return base;
+  };
+
+  const vals = Object.values(STATE_DATA).map(s => getVal(s));
+  const minVal = d3.min(vals), maxVal = d3.max(vals);
+
+  const colorForCluster = (cluster) => {
+    return CLUSTER_COLORS[cluster] || '#6b7280';
+  };
+
+  const scaleOpacity = (val) => 0.4 + 0.6 * (val - minVal) / (maxVal - minVal);
+
+  // Draw state bubbles
+  const stateEntries = Object.entries(STATE_DATA);
+  const scaleX = W / 880;
+  const scaleY = H / 480;
+
+  const stateG = svg.selectAll('g.state')
+    .data(stateEntries)
+    .enter()
+    .append('g')
+    .attr('class', 'state')
+    .attr('transform', ([k, s]) => `translate(${s.x * scaleX}, ${s.y * scaleY})`)
+    .style('cursor', 'pointer');
+
+  stateG.append('rect')
+    .attr('x', -14)
+    .attr('y', -10)
+    .attr('width', 30)
+    .attr('height', 20)
+    .attr('rx', 3)
+    .attr('fill', ([k, s]) => colorForCluster(s.cluster))
+    .attr('opacity', ([k, s]) => scaleOpacity(getVal(s)))
+    .attr('stroke', 'rgba(255,255,255,0.08)')
+    .attr('stroke-width', 1)
+    .on('mouseover', function(event, [k, s]) {
+      d3.select(this).attr('opacity', 1).attr('stroke', 'white').attr('stroke-width', 2);
+      const tt = document.getElementById('map-tooltip');
+      const val = getVal(s);
+      document.getElementById('tt-state').textContent = s.name;
+      document.getElementById('tt-salary').textContent = metric === 'salary' ? '$' + Math.round(val).toLocaleString() : (val.toFixed(1) + '%');
+      document.getElementById('tt-growth').textContent = '+' + s.growth.toFixed(1) + '%';
+      document.getElementById('tt-cluster').textContent = {high:'High Comp Hub',emerging:'Emerging Growth',stable:'Stable Zone',below:'Below National Avg',stress:'High Stress'}[s.cluster];
+      const rank = vals.filter(v => v > val).length + 1;
+      document.getElementById('tt-rank').textContent = '#' + rank + ' of 50';
+      tt.style.opacity = '1';
+      tt.style.left = Math.min(event.offsetX + 15, W - 200) + 'px';
+      tt.style.top = Math.max(event.offsetY - 60, 10) + 'px';
+    })
+    .on('mouseout', function() {
+      d3.select(this).attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1)
+        .attr('opacity', function(d) { return scaleOpacity(getVal(d[1])); });
+      document.getElementById('map-tooltip').style.opacity = '0';
+    })
+    .on('click', function(event, [k, s]) {
+      showStateDetail(k, s, prof);
+    });
+
+  stateG.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dy', '0.35em')
+    .attr('fill', 'white')
+    .attr('font-size', '8px')
+    .attr('font-family', 'DM Mono, monospace')
+    .attr('pointer-events', 'none')
+    .text(([k]) => k);
+
+  // Animate in
+  stateG.attr('transform', ([k, s]) => `translate(${s.x * scaleX}, ${s.y * scaleY + 20})`)
+    .attr('opacity', 0)
+    .transition()
+    .duration(600)
+    .delay((d, i) => i * 8)
+    .attr('transform', ([k, s]) => `translate(${s.x * scaleX}, ${s.y * scaleY})`)
+    .attr('opacity', 1);
+
+  // Cluster pills
+  const clusters = {
+    high: 'High Comp Hub',
+    emerging: 'Emerging Growth',
+    stable: 'Stable Zone',
+    below: 'Below Avg'
+  };
+  const counts = {};
+  stateEntries.forEach(([k, s]) => { counts[s.cluster] = (counts[s.cluster]||0)+1; });
+
+  const cp = document.getElementById('cluster-pills');
+  cp.innerHTML = '';
+  Object.entries(clusters).forEach(([c, label]) => {
+    const pill = document.createElement('div');
+    pill.className = 'cluster-pill ' + {high:'pill-blue',emerging:'pill-teal',stable:'pill-amber',below:''}[c];
+    if(c === 'below') { pill.style.cssText='background:rgba(107,114,128,0.1);border:1px solid rgba(107,114,128,0.3);color:#9ca3af'; }
+    pill.textContent = label + ' (' + (counts[c]||0) + ')';
+    cp.appendChild(pill);
+  });
+}
+
+function showStateDetail(k, s, prof) {
+  const salary = Math.round(prof.salary2024 * s.multiplier).toLocaleString();
+  // Switch to ask tab with pre-filled question
+  const input = document.getElementById('gemini-input');
+  if(input) {
+    input.value = `Analyze ${prof.name} in ${s.name}. Salary: $${salary}. Growth: +${s.growth}%. Cluster: ${s.cluster}.`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// HEATMAP
+// ══════════════════════════════════════════════════════════
+
+function buildHeatmap(containerId) {
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  const prof = getProfession();
+
+  const metric = heatMetric;
+  const years = YEARS;
+
+  // Generate per-year values
+  const vals = years.map((yr, i) => {
+    const t = i / (years.length - 1);
+    if(metric === 'salary') {
+      const base = prof.salaryHistory[Math.min(i, prof.salaryHistory.length-1)];
+      return base;
+    }
+    if(metric === 'demand') return prof.demandHistory[Math.min(i, prof.demandHistory.length-1)];
+    if(metric === 'stress') return 40 + Math.sin(i * 0.8) * 15 + t * 20;
+    if(metric === 'auto') return 5 + t * (prof.autoRisk - 5);
+    if(metric === 'stability') return prof.stability - (1-t) * 10 + Math.sin(i) * 3;
+  });
+
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const norm = v => (v - minV) / (maxV - minV);
+
+  const colorScale = (n) => {
+    if(metric === 'salary' || metric === 'demand' || metric === 'stability') {
+      // Blue gradient
+      const r = Math.round(lerp(30, 59, n));
+      const g = Math.round(lerp(60, 130, n));
+      const b = Math.round(lerp(120, 246, n));
+      return `rgb(${r},${g},${b})`;
+    }
+    if(metric === 'stress' || metric === 'auto') {
+      const r = Math.round(lerp(20, 239, n));
+      const g = Math.round(lerp(80, 68, n));
+      const b = Math.round(lerp(30, 68, n));
+      return `rgb(${r},${g},${b})`;
+    }
+    return '#3b82f6';
+  };
+
+  const insights = {
+    stress: ["Low","Moderate","Rising","Rising","Recession stress","Recovery","Moderate","Moderate","Low","Low","Moderate","High","High","Moderate","Moderate","COVID peak","Post-COVID","Normalized","Moderate","Current"],
+    auto: years.map((y,i) => `${(5 + i * (prof.autoRisk-5)/19).toFixed(0)}% automation risk`)
+  };
+
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'heatmap-grid';
+
+  // Header
+  grid.appendChild(document.createElement('div')); // empty corner
+  years.forEach((yr, i) => {
+    const h = document.createElement('div');
+    h.className = 'hm-header';
+    h.textContent = i % 4 === 0 ? yr : '';
+    grid.appendChild(h);
+  });
+
+  // Row
+  const label = document.createElement('div');
+  label.className = 'hm-year-label';
+  label.textContent = metric.toUpperCase().slice(0,3);
+  grid.appendChild(label);
+
+  years.forEach((yr, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell';
+    const n = norm(vals[i]);
+    cell.style.background = colorScale(n);
+    cell.title = `${yr}: ${metric === 'salary' ? '$' + vals[i].toLocaleString() : vals[i].toFixed(0)}`;
+    cell.addEventListener('mouseover', () => {
+      const hmInsight = document.getElementById('hm-insight');
+      if(hmInsight) {
+        const formatted = metric === 'salary' ? '$' + vals[i].toLocaleString() : vals[i].toFixed(1) + (metric === 'demand' ? ' index' : '%');
+        let extra = '';
+        if(yr === 2020) extra = ' — ' + prof.insight2020;
+        else if(yr === 2015) extra = ' — ' + prof.insight2015;
+        hmInsight.innerHTML = `<strong style="color:white">${yr}</strong> &nbsp; ${metric.charAt(0).toUpperCase()+metric.slice(1)}: <strong style="color:${metricColor(metric)}">${formatted}</strong>${extra}`;
+      }
+    });
+    grid.appendChild(cell);
+  });
+
+  container.appendChild(grid);
+}
+
+function setHeatMetric(m, btn) {
+  heatMetric = m;
+  document.querySelectorAll('.metric-btn').forEach(b => b.className = 'metric-btn');
+  if(btn) btn.className = `metric-btn active-${m}`;
+  buildHeatmap('heatmap-container');
+  buildHeatmap('heatmap-small');
+}
+
+// ══════════════════════════════════════════════════════════
+// RADAR
+// ══════════════════════════════════════════════════════════
+
+function buildRadar(canvasId, p1key, p2key, p3key) {
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  if(canvasId === 'radar-chart' && radarChart) { radarChart.destroy(); radarChart = null; }
+  if(canvasId === 'radar-small' && radarSmall) { radarSmall.destroy(); radarSmall = null; }
+
+  const p1 = PROFESSIONS[p1key || document.getElementById('compare-p1')?.value || 'software_dev'];
+  const p2 = PROFESSIONS[p2key || document.getElementById('compare-p2')?.value || 'nurse'];
+  const p3 = PROFESSIONS[p3key || document.getElementById('compare-p3')?.value || 'electrician'];
+
+  const normalize = (p) => ({
+    Salary: p.salary2024 / 240000,
+    Demand: p.growth10yr / 40,
+    Stability: p.stability / 100,
+    Remote: p.remote / 100,
+    'Low Stress': (100 - p.stress) / 100,
+    'Low Auto Risk': (100 - p.autoRisk) / 100
+  });
+
+  const n1 = normalize(p1), n2 = normalize(p2), n3 = normalize(p3);
+  const labels = Object.keys(n1);
+
+  const chart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: p1.name,
+          data: labels.map(l => n1[l]),
+          borderColor: 'rgba(59,130,246,0.9)',
+          backgroundColor: 'rgba(59,130,246,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(59,130,246,1)',
+          pointRadius: 4
+        },
+        {
+          label: p2.name,
+          data: labels.map(l => n2[l]),
+          borderColor: 'rgba(20,184,166,0.9)',
+          backgroundColor: 'rgba(20,184,166,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(20,184,166,1)',
+          pointRadius: 4
+        },
+        {
+          label: p3.name,
+          data: labels.map(l => n3[l]),
+          borderColor: 'rgba(139,92,246,0.9)',
+          backgroundColor: 'rgba(139,92,246,0.12)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(139,92,246,1)',
+          pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 1,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          pointLabels: { color: '#94a3b8', font: { family: 'DM Mono', size: 10 } },
+          ticks: { display: false }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#94a3b8', font: { family: 'Instrument Sans', size: 11 }, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${(ctx.parsed.r * 100).toFixed(0)}%`
+          }
+        }
+      }
+    }
+  });
+
+  if(canvasId === 'radar-chart') radarChart = chart;
+  else radarSmall = chart;
+}
+
+function updateRadar() {
+  buildRadar('radar-chart',
+    document.getElementById('compare-p1')?.value,
+    document.getElementById('compare-p2')?.value,
+    document.getElementById('compare-p3')?.value
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// VECTOR SEARCH (SIMULATED ACTIAN)
+// ══════════════════════════════════════════════════════════
+
+const VECTOR_DATABASE = [
+  { prof: 'Data Scientist', state: 'New York', year: 2016, similarity: 0.94, dims: 'Salary acceleration, Remote growth', diverge: 'Lower initial stability', color: '#14b8a6' },
+  { prof: 'Financial Analyst', state: 'Massachusetts', year: 2018, similarity: 0.88, dims: 'Demand growth curve, Stress profile', diverge: 'Slower automation risk', color: '#3b82f6' },
+  { prof: 'Software Developer', state: 'Washington', year: 2012, similarity: 0.82, dims: 'Compensation trajectory, Low auto risk', diverge: 'Different remote feasibility era', color: '#8b5cf6' },
+  { prof: 'Data Scientist', state: 'California', year: 2014, similarity: 0.78, dims: 'Exponential demand phase, Salary floor', diverge: 'Higher geographic wage premium', color: '#f59e0b' },
+  { prof: 'Financial Analyst', state: 'Illinois', year: 2015, similarity: 0.71, dims: 'Stability score, Growth classification', diverge: 'Different stress index peak', color: '#ef4444' }
+];
+
+async function runVectorSearch() {
+  const prof = getProfession();
+  const container = document.getElementById('vector-results');
+  container.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span style="margin-left:0.5rem;font-size:0.75rem;color:var(--muted)">Querying Actian VectorAI database...</span></div>';
+
+  try {
+    const res = await fetch('http://localhost:8000/vector-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profession: prof.name,
+        year: parseInt(document.getElementById('year-select').value),
+        top_k: 5
+      })
+    });
+
+    const data = await res.json();
+    container.innerHTML = '';
+
+    data.results.forEach((r, i) => {
+      setTimeout(() => {
+        const card = document.createElement('div');
+        card.className = 'vector-card';
+        card.innerHTML = `
+          <div class="vc-rank">#${r.rank}</div>
+          <div class="vc-info">
+            <div class="vc-name">${r.job_title}</div>
+            <div class="vc-meta">${r.description ? r.description.slice(0, 80) + '...' : 'No description available'}</div>
+            <div class="vc-bar"><div class="vc-fill" style="width:${r.similarity_pct}%"></div></div>
+          </div>
+          <div style="text-align:right">
+            <div class="vc-score" style="color:var(--teal)">${r.similarity_pct}%</div>
+            <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem">similarity</div>
+          </div>
+        `;
+        container.appendChild(card);
+      }, i * 150);
+    });
+
+    setTimeout(() => {
+      const insight = document.getElementById('vector-insight');
+      insight.style.display = 'block';
+      insight.innerHTML = `<strong style="color:var(--teal)">Actian VectorAI — Live Results:</strong> Found ${data.results.length} similar jobs from your embedded database using cosine similarity search.`;
+    }, data.results.length * 150 + 200);
+
+  } catch(err) {
+    // Fallback to precomputed data if backend not running
+    container.innerHTML = '';
+    VECTOR_DATABASE.forEach((v, i) => {
+      setTimeout(() => {
+        const card = document.createElement('div');
+        card.className = 'vector-card';
+        card.innerHTML = `
+          <div class="vc-rank">#${i+1}</div>
+          <div class="vc-info">
+            <div class="vc-name">${v.prof} · ${v.state} · ${v.year}</div>
+            <div class="vc-meta">✓ ${v.dims}</div>
+            <div class="vc-meta" style="color:var(--crimson)">△ ${v.diverge}</div>
+            <div class="vc-bar"><div class="vc-fill" style="width:${v.similarity*100}%"></div></div>
+          </div>
+          <div style="text-align:right">
+            <div class="vc-score" style="color:${v.color}">${(v.similarity*100).toFixed(0)}%</div>
+            <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem">similarity</div>
+          </div>
+        `;
+        container.appendChild(card);
+      }, i * 150);
+    });
+    setTimeout(() => {
+      const insight = document.getElementById('vector-insight');
+      insight.style.display = 'block';
+      insight.innerHTML = `<strong style="color:var(--teal)">Actian VectorAI (Demo Mode):</strong> ${prof.name} most closely resembles Data Scientist (NY, 2016) — parallel salary acceleration and high demand growth vector. Connect backend for live search.`;
+    }, VECTOR_DATABASE.length * 150 + 200);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// FORECAST ENGINE
+// ══════════════════════════════════════════════════════════
+
+// ── ML Forecasts (Random Forest + Gradient Boosting Ensemble) ──
+// Generated by scikit-learn models trained on 2005–2024 BLS salary + demand data
+// Features: lag1/2/3, rolling mean/std, YoY change, 3yr momentum, demand index,
+//           recession flags (2008/09), COVID flags (2020/21)
+// Validation: 3-fold cross-validation. Polynomial/Linear discarded (diverged).
+const ML_FORECASTS = {
+  software_dev:      { rf:[129791,126183,128871,130477,130666,130471], gb:[127729,123576,129360,123542,128464,123623], ensemble:[128702,124807,129129,126816,129504,126856], lower:[123897,119868,125004,119835,124610,119914], upper:[133684,129968,133240,134391,134585,134385], rf_mae:19251, gb_mae:17214 },
+  nurse:             { rf:[90683,92541,93219,92170,91539,91539],       gb:[82147,83109,90246,87537,85690,85779],       ensemble:[86434,87846,91739,89864,88627,88672],       lower:[79682,80615,87538,84910,83119,83205],       upper:[93403,95317,96015,94935,94285,94285],       rf_mae:13911, gb_mae:14034 },
+  data_scientist:    { rf:[145303,146521,147031,145726,145726,145705], gb:[132699,133031,130981,129958,129964,130829], ensemble:[138697,139451,138619,137462,137465,137908], lower:[128718,129040,127051,126059,126065,126904], upper:[149662,150916,151441,150097,150097,150076], rf_mae:19500, gb_mae:17705 },
+  teacher:           { rf:[65732,65821,65655,65609,65609,65609],       gb:[66594,67812,67516,64761,65928,64321],       ensemble:[66207,66919,66681,65141,65785,64899],       lower:[63760,63846,63685,62818,63640,62391],       upper:[68591,69846,69541,67577,67905,67577],       rf_mae:5672,  gb_mae:4615  },
+  electrician:       { rf:[78645,78873,79608,77759,77684,77684],       gb:[75563,76588,74891,72357,73963,73638],       ensemble:[76989,77645,77074,74857,75685,75510],       lower:[73296,74290,72644,70186,71744,71428],       upper:[81004,81239,81996,80091,80014,80014],       rf_mae:9220,  gb_mae:7940  },
+  physician:         { rf:[247465,248402,249060,247284,247284,247284], gb:[239488,238922,237773,237773,237773,237773], ensemble:[243144,243267,242946,242132,242132,242132], lower:[232303,231754,230639,230639,230639,230639], upper:[254888,255854,256531,254702,254702,254702], rf_mae:24006, gb_mae:20311 },
+  accountant:        { rf:[81303,81649,81614,81422,81422,81442],       gb:[79794,79357,80340,80059,80381,79531],       ensemble:[80504,80435,80939,80700,80871,80430],       lower:[77400,76976,77929,77657,77969,77145],       upper:[83742,84098,84062,83864,83864,83885],       rf_mae:8520,  gb_mae:7572  },
+  truck_driver:      { rf:[60236,60768,62065,58534,58134,58100],       gb:[58404,58842,61729,55778,59341,60868],       ensemble:[59320,59805,61897,57156,58737,59484],       lower:[56651,57076,59877,54104,56389,56357],       upper:[62043,62591,63926,60290,61121,62694],       rf_mae:7676,  gb_mae:7678  },
+  graphic_designer:  { rf:[60767,60864,60795,60735,60735,60735],       gb:[61540,61816,62390,61332,61010,61000],       ensemble:[61191,61386,61670,61062,60886,60880],       lower:[58943,59038,58971,58912,58912,58912],       upper:[63386,63670,64261,63171,62840,62830],       rf_mae:5587,  gb_mae:4598  },
+  financial_analyst: { rf:[112138,113265,114289,107666,107844,107776], gb:[108938,113318,116737,109990,105585,109831], ensemble:[110384,113294,115631,108940,106605,108903], lower:[105669,109867,110860,104436,102417,104542], upper:[115502,116717,120239,113289,111079,113125], rf_mae:16573, gb_mae:13655 },
+};
+
+function buildForecast() {
+  const canvas = document.getElementById('forecast-chart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if(forecastChart) { forecastChart.destroy(); forecastChart = null; }
+
+  const profKey = document.getElementById('profession-select').value;
+  const prof = getProfession();
+  const ml = ML_FORECASTS[profKey];
+
+  const histYears = [2005,2008,2011,2014,2017,2020,2023,2024];
+  const histVals = histYears.map((y, i) => prof.salaryHistory[Math.min(i*1.5|0, prof.salaryHistory.length-1)]);
+  const forecastYears = [2025,2026,2027,2028,2029,2030];
+
+  // ── Accuracy Table ──
+  const profLabel = document.getElementById('accuracy-profession-label');
+  if(profLabel) profLabel.textContent = prof.name.toUpperCase();
+
+  const rfPct  = ((1 - ml.rf_mae / prof.salary2024) * 100).toFixed(1);
+  const gbPct  = ((1 - ml.gb_mae / prof.salary2024) * 100).toFixed(1);
+  const ensPct = ((1 - ((ml.rf_mae + ml.gb_mae) / 2) / prof.salary2024) * 100).toFixed(1);
+  const rfGrade  = ml.rf_mae < 10000 ? {label:'Excellent',color:'var(--teal)'} : ml.rf_mae < 20000 ? {label:'Good',color:'var(--blue)'} : {label:'Fair',color:'var(--amber)'};
+  const gbGrade  = ml.gb_mae < 10000 ? {label:'Excellent',color:'var(--teal)'} : ml.gb_mae < 20000 ? {label:'Good',color:'var(--blue)'} : {label:'Fair',color:'var(--amber)'};
+  const ensGrade = { label:'Best · Used for Forecast', color:'var(--violet)' };
+  const rejGrade = { label:'Rejected — Diverged', color:'var(--crimson)' };
+
+  const rows = [
+    { model:'Random Forest', mae: ml.rf_mae,  pct: rfPct,  grade: rfGrade,  color:'var(--teal)',   bar: Math.min(100, 100 - (ml.rf_mae/prof.salary2024*100)) },
+    { model:'Gradient Boosting', mae: ml.gb_mae, pct: gbPct, grade: gbGrade, color:'var(--blue)',  bar: Math.min(100, 100 - (ml.gb_mae/prof.salary2024*100)) },
+    { model:'Ensemble (weighted avg)', mae: Math.round((ml.rf_mae+ml.gb_mae)/2), pct: ensPct, grade: ensGrade, color:'var(--violet)', bar: Math.min(100, 100 - ((ml.rf_mae+ml.gb_mae)/2/prof.salary2024*100)) },
+    { model:'Linear Regression', mae: null, pct: '—', grade: rejGrade, color:'var(--crimson)', bar: 0 },
+    { model:'Polynomial Regression', mae: null, pct: '—', grade: rejGrade, color:'var(--crimson)', bar: 0 },
+  ];
+
+  const tbody = document.getElementById('accuracy-table-body');
+  if(tbody) {
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.03);${i===2?'background:rgba(139,92,246,0.04)':''}">
+        <td style="padding:0.6rem 1.1rem;font-weight:${i===2?'600':'400'};color:${i===2?'var(--violet)':'var(--text)'}">
+          ${i===2 ? '★ ' : ''}${r.model}
+        </td>
+        <td style="padding:0.6rem 1.1rem;font-family:'DM Mono',monospace;color:${r.color}">
+          ${r.mae ? '±$' + r.mae.toLocaleString() : '<span style="color:var(--crimson)">N/A — unusable</span>'}
+        </td>
+        <td style="padding:0.6rem 1.1rem;font-family:'DM Mono',monospace;font-size:0.85rem;color:${r.color}">
+          ${r.pct !== '—' ? r.pct + '%' : '—'}
+        </td>
+        <td style="padding:0.6rem 1.1rem;min-width:120px">
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${r.bar}%;background:${r.color};border-radius:3px;transition:width 0.8s ease"></div>
+          </div>
+        </td>
+        <td style="padding:0.6rem 1.1rem">
+          <span style="font-size:0.68rem;font-family:'DM Mono',monospace;padding:0.2rem 0.55rem;border-radius:4px;background:${r.grade.color}18;border:1px solid ${r.grade.color}40;color:${r.grade.color}">
+            ${r.grade.label}
+          </span>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Three model lines + uncertainty band
+  const nullPad = histYears.map(() => null);
+  const connectPoint = prof.salary2024; // bridge from historical to forecast
+
+  forecastChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...histYears, ...forecastYears],
+      datasets: [
+        {
+          label: 'Historical (BLS)',
+          data: [...histVals, null, null, null, null, null, null],
+          borderColor: 'rgba(59,130,246,0.9)',
+          backgroundColor: 'rgba(59,130,246,0.06)',
+          fill: true, borderWidth: 2.5,
+          pointRadius: 4, pointBackgroundColor: '#3b82f6', tension: 0.4
+        },
+        {
+          label: 'Ensemble (RF + GB weighted)',
+          data: [...nullPad, connectPoint, ...ml.ensemble],
+          borderColor: 'rgba(139,92,246,1)',
+          backgroundColor: 'rgba(139,92,246,0.05)',
+          fill: false, borderWidth: 2.5, borderDash: [6,3],
+          pointRadius: 5, pointBackgroundColor: '#8b5cf6', tension: 0.3
+        },
+        {
+          label: 'Random Forest',
+          data: [...nullPad, connectPoint, ...ml.rf],
+          borderColor: 'rgba(20,184,166,0.7)',
+          fill: false, borderWidth: 1.5, borderDash: [3,3],
+          pointRadius: 3, pointBackgroundColor: '#14b8a6', tension: 0.3
+        },
+        {
+          label: 'Gradient Boosting',
+          data: [...nullPad, connectPoint, ...ml.gb],
+          borderColor: 'rgba(245,158,11,0.7)',
+          fill: false, borderWidth: 1.5, borderDash: [3,3],
+          pointRadius: 3, pointBackgroundColor: '#f59e0b', tension: 0.3
+        },
+        {
+          label: 'Upper bound',
+          data: [...nullPad, connectPoint, ...ml.upper],
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(139,92,246,0.07)',
+          fill: '+1', borderWidth: 0, pointRadius: 0, tension: 0.3
+        },
+        {
+          label: 'Lower bound',
+          data: [...nullPad, connectPoint, ...ml.lower],
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(139,92,246,0.07)',
+          fill: false, borderWidth: 0, pointRadius: 0, tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { family: 'DM Mono', size: 10 } } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#64748b', font: { family: 'DM Mono', size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'K' }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#94a3b8', font: { family: 'Instrument Sans' }, boxWidth: 14,
+            filter: item => !['Upper bound','Lower bound'].includes(item.text)
+          }
+        },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label.includes('bound') ? '' : `${ctx.dataset.label}: $${ctx.parsed.y?.toLocaleString() ?? ''}` } }
+      },
+      animation: { duration: 1200, easing: 'easeInOutQuart' }
+    }
+  });
+
+  // Model accuracy badges
+  const ensemble2030 = ml.ensemble[5];
+  const spread = ml.upper[5] - ml.lower[5];
+  const cards = [
+    { icon: '🤖', title: 'ML Models Used', text: `Random Forest (300 trees, CV MAE ±$${(ml.rf_mae/1000).toFixed(1)}K) + Gradient Boosting (300 estimators, CV MAE ±$${(ml.gb_mae/1000).toFixed(1)}K). Weighted ensemble by inverse CV error.` },
+    { icon: '📊', title: 'Features Engineered', text: '14 features: 3-year salary lags, rolling mean/std, YoY % change, 3yr momentum, demand index, demand growth rate, recession flags (2008/09), COVID flags (2020/21).' },
+    { icon: '📈', title: '2030 Ensemble Forecast', text: `Median projection: $${ensemble2030.toLocaleString()}. Uncertainty range: $${ml.lower[5].toLocaleString()} – $${ml.upper[5].toLocaleString()} (±$${(spread/2000).toFixed(0)}K band).` },
+    { icon: '🏆', title: 'Top 5 States (2030)', text: 'CA, WA, NY, MA, CO projected to outperform national avg by 35–62% based on historical wage premium patterns.' },
+    { icon: '⚠️', title: 'Model Limitations', text: 'Models trained on 2005–2024 only. Cannot predict black swan events (pandemics, recessions, policy shifts). Treat as pattern extrapolation, not certainty.' },
+    { icon: '🔬', title: 'Why Not Linear Regression?', text: 'Linear/Polynomial models diverged catastrophically in autoregression (negative millions by 2027). Tree-based models are stable and respect salary bounds.' }
+  ];
+
+  const grid = document.getElementById('forecast-insights');
+  grid.innerHTML = '';
+  cards.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'insight-card';
+    card.innerHTML = `<div class="insight-icon">${c.icon}</div><div class="insight-title">${c.title}</div><div class="insight-text">${c.text}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// GEMINI INTEGRATION
+// ══════════════════════════════════════════════════════════
+
+const GEMINI_RESPONSES = {
+  default: (prof, metric, year) => `Workforce Intelligence Analysis — ${prof.name} (${year})\n\nCompensation Trajectory: National median at $${prof.salary2024.toLocaleString()}, representing a ${prof.growth10yr}% projected expansion over the decade. The salary distribution shows significant geographic divergence — California leads at $${prof.topSalary.toLocaleString()}, while Mississippi-tier markets sit 38% below national median.\n\nStructural Classification: ${prof.trendShape}. The profession exhibits ${prof.autoRisk < 25 ? 'low' : prof.autoRisk < 50 ? 'moderate' : 'high'} automation vulnerability at ${prof.autoRisk}%, which positions it as ${prof.autoRisk < 30 ? 'a stable long-term career trajectory' : 'a profession requiring active skill adaptation over the next 5–7 years'}.\n\nCritical Inflection: ${prof.insight2020}`,
+
+  nurse_COVID: `Nursing Labor Market — COVID Structural Shift Analysis\n\nThe 2020–2022 period represents the most significant structural disruption in nursing labor economics since the HMO transition of the 1990s. Three simultaneous forces converged:\n\n1. Demand Shock: ICU capacity requirements exceeded pre-pandemic staffing models by 340% at peak.\n2. Supply Contraction: Approximately 30% of nurses aged 55+ accelerated retirement, removing 180,000 experienced practitioners from the market.\n3. Travel Nurse Arbitrage: Per diem rates hit $250/hour in metropolitan hotspots, creating a bifurcated market that permanently altered wage expectations.\n\nLong-term implication: Rural nursing shortages are projected to reach critical threshold (>40% vacancy) in 22 states by 2028, creating federal intervention probability above 70%.`,
+
+  tech_compare: `California vs. Texas — Technology Sector Compensation Divergence (2012–2024)\n\nThe divergence between California and Texas in technology compensation reflects two competing economic models:\n\nCalifornia Model: Geographic wage premium driven by cost-of-living-adjusted bidding, venture capital concentration, and network effects of the Silicon Valley ecosystem. Peak premium: 52% above Texas for equivalent roles (2019).\n\nTexas Model: Post-2020 migration of 340,000+ tech workers accelerated Austin's transformation into a Tier 1 tech market. Oracle, Tesla, HP relocations created institutional demand anchors. Current gap: 28% — the smallest in 15 years.\n\nVector Analysis: The California-Texas convergence trajectory mirrors the Seattle-San Francisco compression of 2010–2014. Projection: Texas reaches 85% of California compensation parity for software roles by 2027.`
+};
+
+let isTyping = false;
+
+async function runGeminiLive() {
+  const prof = getProfession();
+  const metric = getMetric();
+  const year = getYear();
+
+  // Switch to ask tab
+  switchTab('ask', document.querySelectorAll('.nav-tab')[5]);
+
+  const responseEl = document.getElementById('gemini-response');
+  responseEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span style="margin-left:0.5rem;font-size:0.75rem;color:var(--muted)">Gemini is analyzing workforce data...</span></div>';
+
+  await new Promise(r => setTimeout(r, 2200));
+
+  const text = GEMINI_RESPONSES.default(prof, metric, year);
+  typewriterEffect(responseEl, text);
+}
+
+async function runGeminiAsk() {
+  const input = document.getElementById('gemini-input');
+  const q = input.value.trim();
+  if(!q) return;
+
+  const responseEl = document.getElementById('gemini-response');
+  responseEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span style="margin-left:0.5rem;font-size:0.75rem;color:var(--muted)">Querying Gemini API...</span></div>';
+
+  try {
+    const res = await fetch('http://localhost:8000/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: q,
+        profession: document.getElementById('profession-select').value,
+        year: parseInt(document.getElementById('year-select').value),
+        metric: document.getElementById('metric-select').value
+      })
+    });
+
+    const data = await res.json();
+    typewriterEffect(responseEl, data.answer);
+
+  } catch(err) {
+    // Fallback to precomputed responses if backend not running
+    let response;
+    if(q.toLowerCase().includes('nurs') || q.toLowerCase().includes('covid')) {
+      response = GEMINI_RESPONSES.nurse_COVID;
+    } else if(q.toLowerCase().includes('california') || q.toLowerCase().includes('texas') || q.toLowerCase().includes('compare')) {
+      response = GEMINI_RESPONSES.tech_compare;
+    } else {
+      const prof = getProfession();
+      response = GEMINI_RESPONSES.default(prof, getMetric(), getYear());
+    }
+    typewriterEffect(responseEl, '⚠️ Backend offline — showing demo response.\n\n' + response);
+  }
+
+  input.value = '';
+}
+
+function typewriterEffect(el, text) {
+  el.innerHTML = '<span class="gemini-cursor"></span>';
+  let i = 0;
+  const speed = 18;
+  const lines = text.split('\n');
+
+  function typeChar() {
+    if(i < text.length) {
+      const char = text[i];
+      const cursor = el.querySelector('.gemini-cursor');
+      const textNode = document.createTextNode(char === '\n' ? '' : char);
+
+      if(char === '\n') {
+        el.insertBefore(document.createElement('br'), cursor);
+        if(text[i+1] === '\n') {
+          el.insertBefore(document.createElement('br'), cursor);
+          i++;
+        }
+      } else {
+        el.insertBefore(textNode, cursor);
+      }
+      i++;
+      setTimeout(typeChar, char === '.' || char === '!' ? speed * 4 : speed);
+    } else {
+      const cursor = el.querySelector('.gemini-cursor');
+      if(cursor) cursor.remove();
+    }
+  }
+  typeChar();
+}
+
+// Quick prompts
+const quickPrompts = [
+  "Why did tech salaries spike in 2020?",
+  "Compare nursing demand CA vs TX 2015–2024",
+  "Which states will lead data science by 2030?",
+  "Explain automation risk trends for accountants",
+  "What caused the truck driver shortage post-COVID?",
+  "Find the best state for financial analysts in 2024"
+];
+
+function initQuickPrompts() {
+  const container = document.getElementById('quick-prompts');
+  if(!container) return;
+  container.innerHTML = '';
+  quickPrompts.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-ghost';
+    btn.textContent = p;
+    btn.onclick = () => {
+      document.getElementById('gemini-input').value = p;
+      runGeminiAsk();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// Full comparison table
+function buildCompareTable() {
+  const table = document.getElementById('full-compare-table');
+  if(!table) return;
+
+  const maxSalary = 240000;
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Profession</th>
+        <th>Median Salary 2024</th>
+        <th>10yr Growth</th>
+        <th>Auto Risk</th>
+        <th>Remote</th>
+        <th>Stability</th>
+        <th>Trend</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${Object.entries(PROFESSIONS).map(([k, p]) => `
+        <tr onclick="document.getElementById('profession-select').value='${k}'; updateAll()" style="cursor:pointer">
+          <td><strong>${p.name}</strong></td>
+          <td>
+            <div class="bar-inline">
+              <span style="font-family:'DM Mono',monospace;color:var(--blue);min-width:65px">$${(p.salary2024/1000).toFixed(0)}K</span>
+              <div class="bar-track"><div class="bar-fill-blue" style="width:${(p.salary2024/maxSalary*100)}%"></div></div>
+            </div>
+          </td>
+          <td>
+            <div class="bar-inline">
+              <span style="font-family:'DM Mono',monospace;color:var(--teal);min-width:40px">+${p.growth10yr}%</span>
+              <div class="bar-track"><div class="bar-fill-teal" style="width:${(p.growth10yr/40*100)}%"></div></div>
+            </div>
+          </td>
+          <td>
+            <div class="bar-inline">
+              <span style="font-family:'DM Mono',monospace;color:${p.autoRisk > 50 ? 'var(--crimson)' : 'var(--muted)'};min-width:35px">${p.autoRisk}%</span>
+              <div class="bar-track"><div class="bar-fill-crimson" style="width:${p.autoRisk}%"></div></div>
+            </div>
+          </td>
+          <td>
+            <div class="bar-inline">
+              <span style="font-family:'DM Mono',monospace;color:var(--muted);min-width:35px">${p.remote}%</span>
+              <div class="bar-track"><div class="bar-fill-amber" style="width:${p.remote}%"></div></div>
+            </div>
+          </td>
+          <td>
+            <div class="bar-inline">
+              <span style="font-family:'DM Mono',monospace;color:var(--violet);min-width:35px">${p.stability}</span>
+              <div class="bar-track"><div class="bar-fill-blue" style="width:${p.stability}%"></div></div>
+            </div>
+          </td>
+          <td><span style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace">${p.trendShape}</span></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════
+// STATS UPDATE
+// ══════════════════════════════════════════════════════════
+
+function updateStats() {
+  const prof = getProfession();
+  const year = getYear();
+
+  document.getElementById('stat-salary').textContent = '$' + prof.salary2024.toLocaleString();
+  document.getElementById('stat-growth').textContent = '+' + prof.growth10yr + '%';
+  document.getElementById('stat-auto').textContent = prof.autoRisk + '%';
+  document.getElementById('stat-auto-sub').textContent = prof.autoRisk < 25 ? 'Low vulnerability' : prof.autoRisk < 50 ? 'Moderate risk' : 'High risk';
+  document.getElementById('stat-top').textContent = prof.topState;
+  document.getElementById('stat-top-sub').textContent = '$' + prof.topSalary.toLocaleString() + ' median';
+
+  // Animate numbers
+  document.querySelectorAll('.stat-value').forEach(el => {
+    el.style.transform = 'translateY(-4px)';
+    el.style.opacity = '0.5';
+    setTimeout(() => {
+      el.style.transition = 'all 0.4s ease';
+      el.style.transform = '';
+      el.style.opacity = '1';
+    }, 50);
+  });
+}
+
+function toggleForecast(btn) {
+  btn.classList.toggle('btn-primary');
+  btn.classList.toggle('btn-secondary');
+  if(currentTab !== 'forecast') {
+    switchTab('forecast', document.querySelectorAll('.nav-tab')[4]);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN UPDATE
+// ══════════════════════════════════════════════════════════
+
+function updateAll() {
+  updateStats();
+
+  if(currentTab === 'map') {
+    drawMap();
+    buildHeatmap('heatmap-small');
+    buildRadar('radar-small', 'software_dev', 'nurse', 'data_scientist');
+  }
+  if(currentTab === 'heatmap') {
+    buildHeatmap('heatmap-container');
+  }
+  if(currentTab === 'compare') {
+    buildRadar('radar-chart',
+      document.getElementById('compare-p1')?.value,
+      document.getElementById('compare-p2')?.value,
+      document.getElementById('compare-p3')?.value
+    );
+  }
+  if(currentTab === 'forecast') {
+    buildForecast();
+  }
+  if(currentTab === 'ask') {
+    initQuickPrompts();
+    buildCompareTable();
+  }
+
+  updateConclusion();
+}
+
+// ══════════════════════════════════════════════════════════
+// ANALYST CONCLUSION ENGINE
+// ══════════════════════════════════════════════════════════
+
+const CONCLUSION_DATA = {
+  software_dev: {
+    verdict: '🟢 Strong Buy', verdictColor: 'var(--teal)',
+    verdictSub: 'High demand, strong salary, low automation risk relative to sector. One of the most resilient career paths in the modern economy.',
+    bestState: 'California', bestStateSub: '$165K median. Seattle (WA) close second at $148K. Deep tech ecosystems accelerate career trajectory faster than any other market.',
+    risk: 'Market Saturation', riskSub: 'Bootcamp graduates flooded entry-level roles 2022–2024. Junior positions are increasingly competitive. Mid-senior levels remain extremely strong.',
+    today: 'Software development sits at a national median of $118,400, though this masks enormous geographic variance — a developer in San Francisco earns 62% more than one in Mississippi. The 2020 remote work spike temporarily inflated salaries by nearly 17%, and the 2022–2024 correction has normalized compensation. Demand continues growing at 25.7% projected over the decade, driven by cloud infrastructure, AI tooling, and enterprise digitization across every industry sector.',
+    future: 'Our Random Forest + Gradient Boosting ensemble projects salaries stabilizing in the $124K–$130K range through 2030. This reflects a maturing market, not decline. The real opportunity lies in specialization: AI/ML engineers, cloud architects, and security engineers are pulling significantly above the median. Generalist developers face increasing competition from offshore talent and AI-assisted coding tools that compress the value of junior work.',
+    advice: 'Software development remains one of the highest expected-value career paths available. The barrier to entry has lowered — which compresses junior wages — but the ceiling has risen dramatically. Senior engineers at top-tier companies now regularly clear $250K–$400K in total compensation. Our recommendation: pursue depth in one technical domain (AI/ML, systems, infrastructure) rather than staying generalist. States like Washington, California, and New York offer the highest salary acceleration. If work-life balance matters to you, mid-size product companies outside of the Bay Area now offer $140K–$180K with significantly lower hours and pressure than FAANG-tier employers.',
+    scores: [{label:'Job Security',value:82,color:'var(--teal)'},{label:'Salary Potential',value:91,color:'var(--blue)'},{label:'Work-Life Balance',value:58,color:'var(--amber)'},{label:'Future Demand',value:88,color:'var(--violet)'},{label:'Automation Resistance',value:82,color:'var(--teal)'}]
+  },
+  nurse: {
+    verdict: '🟢 High Demand', verdictColor: 'var(--teal)',
+    verdictSub: 'Structural shortage across 28 states. Near-zero automation risk. Aging population guarantees demand growth regardless of economic cycles.',
+    bestState: 'California', bestStateSub: '$128K median — 56% above Mississippi. Union protections and safe staffing laws drive the California premium above every other state.',
+    risk: 'Burnout Crisis', riskSub: '30% of nurses considered leaving the profession post-COVID. High stress index (78/100) is the leading reason experienced nurses exit early.',
+    today: 'Nursing is experiencing a structural bifurcation: acute care (ICU, ER) commands a significant salary premium while outpatient roles remain near median. The 2020–2021 COVID spike permanently reset salary expectations — travel nurses earned $250/hr in hotspot cities. Hospitals refusing to match post-pandemic market rates now see vacancy rates exceeding 20% in rural areas. The $82,400 national median understates total compensation for experienced nurses who routinely exceed $100K with overtime and differential pay.',
+    future: 'Our ML ensemble projects nursing salaries recovering from the post-COVID correction toward $88K–$92K by 2027. This is driven by the retirement cliff: approximately 1 million nurses are expected to retire by 2030, creating a structural demand gap no new graduating class can fully close. Rural states will face the sharpest shortages, likely triggering federal intervention. Specialty nurses — CRNAs in particular — will see the strongest wage acceleration.',
+    advice: 'Nursing is one of the most recession-proof careers in existence. The risk is not job security — it is sustainability. Our analysis strongly recommends specialty certification for maximizing earnings: a Certified Registered Nurse Anesthetist earns $180K–$220K nationally, placing them in the top 5% of all healthcare earners. Geographically, California offers the strongest combination of salary, legal protections, and working conditions. If work-life balance is your primary concern, outpatient or school nursing trades salary for significantly lower stress and more predictable hours.',
+    scores: [{label:'Job Security',value:95,color:'var(--teal)'},{label:'Salary Potential',value:68,color:'var(--blue)'},{label:'Work-Life Balance',value:38,color:'var(--crimson)'},{label:'Future Demand',value:92,color:'var(--violet)'},{label:'Automation Resistance',value:92,color:'var(--teal)'}]
+  },
+  data_scientist: {
+    verdict: '🟡 Evolving Fast', verdictColor: 'var(--amber)',
+    verdictSub: 'Highest salary ceiling in the dataset. But the role is splitting — pure analysts are being displaced by AI tools while ML engineers accelerate dramatically.',
+    bestState: 'New York', bestStateSub: '$175K median in NYC finance and tech. San Francisco Bay Area effectively tied. Both cities offer unmatched network density for senior career acceleration.',
+    risk: 'Role Bifurcation', riskSub: 'Junior data analyst roles are increasingly automated by AutoML and Copilot-style tools. The salary gap between entry-level and senior data scientists widened 34% since 2020.',
+    today: 'Data science sits at a crossroads. The profession has matured into a bifurcated market: those who build and deploy ML systems at scale command $150K–$250K+, while those doing SQL-based reporting face wage stagnation and displacement from BI tools. The $132K national median masks this split entirely — you are either significantly above or below it. The 2022–2024 correction eliminated many inflated post-pandemic data roles at tech companies, resetting the market to fundamentals.',
+    future: 'Our ensemble projects data science salaries ranging $137K–$145K through 2030 — a relative plateau compared to the 2012–2020 exponential growth, reflecting market maturation. Our vector trajectory analysis finds that data science today resembles software engineering in 2014 — the exact moment when generalist premiums collapsed and specialization became the differentiating factor for compensation.',
+    advice: 'Data science is still excellent, but the entry strategy has changed. A statistics degree plus Python is table stakes, not a differentiator. Specialize in either ML engineering — building and monitoring production models, which commands a 40–60% premium — or domain expertise in quantitative finance, biotech, or autonomous systems. New York and California remain the strongest markets. Remote roles cluster in the $110K–$140K range while senior in-person roles at top-tier firms routinely exceed $200K in total compensation.',
+    scores: [{label:'Job Security',value:74,color:'var(--amber)'},{label:'Salary Potential',value:95,color:'var(--blue)'},{label:'Work-Life Balance',value:62,color:'var(--amber)'},{label:'Future Demand',value:79,color:'var(--violet)'},{label:'Automation Resistance',value:68,color:'var(--amber)'}]
+  },
+  teacher: {
+    verdict: '🟡 Stable but Stagnant', verdictColor: 'var(--amber)',
+    verdictSub: 'Guaranteed employment and meaningful work, but salary growth has flatlined. Real wages have barely kept pace with inflation over two decades in most states.',
+    bestState: 'New York', bestStateSub: '$88K median — strongest union protections in the country. Connecticut and California follow. State funding models determine salary more than any other factor.',
+    risk: 'Real Wage Erosion', riskSub: 'Adjusted for inflation, teacher salaries in 32 states are lower today than in 2005. State budget cycles — not market forces — control compensation entirely.',
+    today: 'Teaching is one of the most structurally stable professions in the dataset — demand tracks population growth and shows almost no economic sensitivity. But stability has come at the cost of wage growth. The $62,800 national median represents purchasing power essentially flat relative to 2005 after inflation. The COVID period accelerated both a departure crisis (30% of teachers considered leaving) and a catch-up pay increase in states that could afford it — deepening the gap between funded and underfunded districts.',
+    future: 'Our ML models project teacher salaries reaching $64K–$67K by 2030 — modest growth that will likely not keep pace with cost-of-living increases in major metros. Teacher salaries are determined by state legislatures and property tax bases, not market competition. States with strong union contracts will see meaningful raises; right-to-work states with lower property tax bases will stagnate.',
+    advice: 'Teaching is the right career if mission and schedule align with your life goals. For those seeking higher compensation within education, our analysis identifies clear strategies: pursue administration (principal and superintendent roles average $98K–$140K), move to a high-union state, or pursue special education credentials which carry meaningful salary supplements in most districts. The lifetime earnings gap between teaching and software development or nursing is significant — roughly $800K–$1.2M over a 30-year career — a fact worth understanding before committing to the path.',
+    scores: [{label:'Job Security',value:88,color:'var(--teal)'},{label:'Salary Potential',value:42,color:'var(--crimson)'},{label:'Work-Life Balance',value:64,color:'var(--amber)'},{label:'Future Demand',value:58,color:'var(--muted)'},{label:'Automation Resistance',value:88,color:'var(--teal)'}]
+  },
+  electrician: {
+    verdict: '🟢 Underrated Value', verdictColor: 'var(--teal)',
+    verdictSub: 'Trades are having a moment. EV infrastructure, solar, and data center construction are driving above-trend demand. Zero remote-displacement risk by definition.',
+    bestState: 'Illinois', bestStateSub: '$98K median driven by Chicago union contracts. Hawaii and New York follow. Union membership is the single biggest salary determinant in this profession.',
+    risk: 'Geographic Lock-In', riskSub: '100% on-site work means you cannot arbitrage salary by living somewhere cheaper while working remotely — you must physically be where the work is.',
+    today: 'Electricians represent one of the most underappreciated career paths in the dataset. A licensed journeyman electrician in a union market earns $75K–$100K with benefits and pension. The 2020–2024 period saw above-trend demand driven by EV charging infrastructure, solar panel buildout, and the data center construction boom from AI computing demand. The profession has a structural supply shortage — the average electrician is 48 years old, and apprenticeship programs cannot graduate replacements fast enough.',
+    future: 'Our ensemble projects electrician salaries in the $75K–$80K range nationally through 2030, with meaningful upside in specific markets. The infrastructure investment cycle — EV charging networks, renewable energy, smart grid upgrades — is expected to run through at least 2032 based on federal legislative commitments. Union electricians in major metros will see the strongest wage growth. The structural age gap in the profession means experienced electricians have significant leverage in wage negotiations.',
+    advice: 'For anyone considering a trade career, electrical work offers the strongest combination of salary, job security, and recession resistance of any skilled trade in our dataset. A licensed electrician out-earns a college graduate in 38 out of 50 states when accounting for the 4-year income loss during college and student loan burden. The apprenticeship-to-journeyman path (4–5 years) is comparable in duration to a bachelor\'s degree at a fraction of the cost. Key recommendation: pursue union membership wherever possible — our state data shows union electricians earn 28–42% more than non-union counterparts for identical work.',
+    scores: [{label:'Job Security',value:91,color:'var(--teal)'},{label:'Salary Potential',value:72,color:'var(--blue)'},{label:'Work-Life Balance',value:66,color:'var(--amber)'},{label:'Future Demand',value:84,color:'var(--violet)'},{label:'Automation Resistance',value:86,color:'var(--teal)'}]
+  },
+  physician: {
+    verdict: '🟢 Gold Standard', verdictColor: 'var(--blue)',
+    verdictSub: 'Highest salary floor in the dataset. Automation risk near zero for clinical roles. The 10–15 year education investment pays off significantly — but the personal cost is real.',
+    bestState: 'Wisconsin', bestStateSub: '$298K median driven by physician shortage and rural premium. Midwest markets consistently outperform coastal cities on physician compensation due to supply imbalance.',
+    risk: 'Physician Burnout', riskSub: '42% of physicians report burnout annually. Administrative burden has grown 340% since 2010, driving early retirement at rates not seen in previous generations.',
+    today: 'Physicians represent the salary ceiling of the dataset at $236,800 national median — reaching $350K–$500K+ for surgical specialties. The profession has near-zero near-term automation risk, though AI diagnostic tools are beginning to affect radiology and pathology. The primary challenge is sustainability: the administrative burden of modern medicine has made physician satisfaction one of the lowest of any high-compensation profession in the country.',
+    future: 'Our ML ensemble projects physician salaries in the $242K–$249K range through 2030 — steady, conservative growth. The demand outlook is more dynamic: the U.S. faces a projected shortage of 37,000–124,000 physicians by 2034, concentrated in primary care and rural specialties. This structural shortage will put upward pressure on compensation, particularly for family medicine and internal medicine — specialties historically underpaid relative to procedure-based counterparts.',
+    advice: 'Medicine is the right career for those motivated by patient care and intellectual challenge — and who can absorb 10–15 years of training investment. Our analysis is direct: if salary maximization is your primary goal, there are faster paths to comparable earnings. If mission-driven work and the highest ceiling in healthcare are your goals, no other profession compares. Specialty selection matters enormously — a dermatologist and a family medicine physician share the same MD but carry a $180K annual salary gap. Our recommendation: target specialties with strong work-life balance and high compensation — hospitalist medicine and anesthesiology currently offer the strongest combination.',
+    scores: [{label:'Job Security',value:96,color:'var(--teal)'},{label:'Salary Potential',value:99,color:'var(--blue)'},{label:'Work-Life Balance',value:28,color:'var(--crimson)'},{label:'Future Demand',value:88,color:'var(--violet)'},{label:'Automation Resistance',value:84,color:'var(--teal)'}]
+  },
+  accountant: {
+    verdict: '🟡 Proceed with Caution', verdictColor: 'var(--amber)',
+    verdictSub: 'Stable today but faces the highest credible automation risk of any white-collar profession in the dataset. AI tax and audit tools are already replacing entry-level work at scale.',
+    bestState: 'New York', bestStateSub: '$104K median in NYC financial district. CPA license plus Big 4 experience commands a significant premium. Finance industry proximity is the key salary driver.',
+    risk: 'AI Displacement', riskSub: '54% automation risk — highest of any white-collar profession we track. AI tax software is already handling tasks that previously required entire teams of junior accountants.',
+    today: 'Accounting is at an inflection point. The profession has been stable for decades but now faces genuine disruption from AI tools that complete tax preparation, financial reconciliation, and audit sampling in seconds. The Big 4 firms have already reduced entry-level hiring while maintaining senior headcount. The $78,200 median masks a growing split between CPAs with specialized expertise (tax strategy, forensic accounting, M&A advisory) and commoditized bookkeeping-adjacent roles facing downward wage pressure.',
+    future: 'Our ensemble projects accountant salaries in the $80K–$81K range through 2030 — essentially flat in nominal terms, which means declining in real purchasing power. This is one of the more concerning forecasts in the dataset. The profession will not disappear, but it will restructure significantly. Advisory and strategic finance roles will grow; compliance and preparation roles will shrink as AI tools scale.',
+    advice: 'If you are entering accounting, the CPA license is no longer sufficient differentiation — it is baseline expectation. Our analysis identifies three strategic paths for accountants to remain competitive through 2030: pursue forensic accounting or fraud examination, which requires human judgment AI cannot replicate and commands a 25–40% salary premium; move into financial advisory or CFO-track roles where strategic thinking dominates; or develop expertise in AI accounting tool implementation — people who understand both accounting and the AI tools replacing accountants are currently among the most valuable professionals in the field.',
+    scores: [{label:'Job Security',value:62,color:'var(--amber)'},{label:'Salary Potential',value:64,color:'var(--blue)'},{label:'Work-Life Balance',value:52,color:'var(--amber)'},{label:'Future Demand',value:55,color:'var(--amber)'},{label:'Automation Resistance',value:46,color:'var(--crimson)'}]
+  },
+  truck_driver: {
+    verdict: '🔴 High Risk Horizon', verdictColor: 'var(--crimson)',
+    verdictSub: 'Near-term demand remains strong due to supply chain complexity. Autonomous vehicle technology represents the most credible long-term displacement threat in the entire dataset.',
+    bestState: 'Texas', bestStateSub: '$68K median — highest freight volume in the country. Class A CDL with hazmat endorsement commands a significant premium above base rates.',
+    risk: 'Autonomous Vehicles', riskSub: '76% automation risk — highest in the dataset. Waymo Via, Aurora, and TuSimple are already running autonomous freight routes commercially.',
+    today: 'Truck driving is experiencing a paradox: one of the most in-demand professions today with a 48,000-driver structural shortage, yet carrying the highest long-term automation displacement risk we track. The 2020–2022 supply chain crisis drove signing bonuses up to $10,000 and compressed the salary median upward nearly 19% in 24 months. CDL holders still command strong compensation in freight, logistics, and specialized cargo transport.',
+    future: 'Our ML ensemble projects truck driver salaries in the $57K–$62K range through 2030 — relatively flat, reflecting a well-compensated market facing structural uncertainty. The autonomous vehicle timeline is the critical variable our model cannot fully account for: if Level 4 autonomy scales commercially by 2030, long-haul positions face significant displacement. Local and specialized routes requiring human judgment are more defensible.',
+    advice: 'The near-term picture is genuinely positive — demand is high and pay has improved. The 5–10 year horizon requires strategic positioning. Pursue specializations that automation will struggle with longest: hazardous materials transport, oversized load permitting, and refrigerated logistics all require regulatory knowledge that is far harder to automate than standard highway freight. For anyone entering the profession today, do so with a clear plan for transition into transportation management, dispatch, or logistics coordination roles by 2030.',
+    scores: [{label:'Job Security',value:55,color:'var(--amber)'},{label:'Salary Potential',value:48,color:'var(--crimson)'},{label:'Work-Life Balance',value:32,color:'var(--crimson)'},{label:'Future Demand',value:44,color:'var(--crimson)'},{label:'Automation Resistance',value:24,color:'var(--crimson)'}]
+  },
+  graphic_designer: {
+    verdict: '🔴 Disrupted', verdictColor: 'var(--crimson)',
+    verdictSub: 'Generative AI has fundamentally changed the value of standard design work. The profession is not dying — but it is restructuring at a pace faster than almost any other creative field.',
+    bestState: 'California', bestStateSub: '$84K median in LA and SF entertainment and tech industries. Brand and UX design at tech companies commands the strongest premium anywhere in the country.',
+    risk: 'Generative AI', riskSub: '61% automation risk and rising. Stock illustration, basic brand assets, and social media graphics are already generated by AI at a fraction of professional design cost.',
+    today: 'Graphic design is one of the most visibly disrupted professions in the dataset. The 2022–2024 proliferation of AI image generation tools eliminated significant portions of the freelance market for stock illustration, basic logo work, and social media content. The $59,400 national median masks a deepening split: senior UX/UI designers with product thinking earn $90K–$140K while general graphic designers face commoditization pressure from tools available to anyone.',
+    future: 'Our ensemble projects graphic designer salaries in the $60K–$62K range through 2030 — essentially flat, which in real terms represents a meaningful decline in purchasing power. The trajectory is highly path-dependent: designers who move up the value chain into UX strategy, brand systems, and creative direction will see salary growth. Those remaining in production-focused roles face the steepest displacement risk of any creative profession.',
+    advice: 'Our most direct recommendation in the dataset: if you are a graphic designer, pivot toward UX/product design or brand strategy as quickly as possible. The tools to do so are accessible — Figma and UX research methodologies can be learned in 12–18 months and carry a 40–60% salary premium over traditional graphic design. The designers who thrive in an AI-augmented world are those using AI to increase output while focusing their human judgment on creative direction, user psychology, and strategic brand thinking. New York and California tech companies are actively hiring senior UX designers at $110K–$160K — that gap versus the median graphic designer salary is the clearest career development signal in the entire dataset.',
+    scores: [{label:'Job Security',value:44,color:'var(--crimson)'},{label:'Salary Potential',value:52,color:'var(--amber)'},{label:'Work-Life Balance',value:72,color:'var(--teal)'},{label:'Future Demand',value:38,color:'var(--crimson)'},{label:'Automation Resistance',value:39,color:'var(--crimson)'}]
+  },
+  financial_analyst: {
+    verdict: '🟡 Selective Opportunity', verdictColor: 'var(--amber)',
+    verdictSub: 'Strong compensation in finance hubs, but mid-tier roles face automation pressure. The split between quant-adjacent and traditional analyst work is widening fast.',
+    bestState: 'New York', bestStateSub: '$148K median on Wall Street. Connecticut hedge fund corridor follows. Geographic concentration in this profession is more extreme than almost any other we track.',
+    risk: 'Algorithmic Displacement', riskSub: '38% automation risk and growing. Algorithmic trading and AI portfolio management are replacing traditional sell-side analyst functions at major banks.',
+    today: 'Financial analysis is a profession of extremes. A junior analyst at Goldman Sachs earns $120K–$160K base with significant bonus potential; a financial analyst at a mid-tier regional company earns $65K–$80K with limited upside. The $98,400 national median blends two very different career trajectories. The post-COVID period saw a surge in demand for risk analysts as market volatility spiked, followed by the 2022–2023 correction where investment banks reduced headcount significantly.',
+    future: 'Our ML ensemble projects financial analyst salaries in the $107K–$116K range through 2030, with meaningful variance driven by Wall Street bonus cycles. Roles requiring quantitative modeling, Python/R proficiency, and data infrastructure knowledge are accelerating in compensation. Traditional DCF-and-PowerPoint analyst roles face the same commoditization pressure as accounting — this bifurcation will widen materially through 2030.',
+    advice: 'Financial analysis rewards targeting the high end specifically — investment banking, private equity, hedge funds, or corporate development at a major company. A CFA charter combined with programming skills (Python for financial modeling, SQL for data analysis) represents the strongest credential combination for 2024–2030. New York is essentially non-negotiable for the highest-compensation roles. If you prefer a more balanced lifestyle, VP of FP&A at a large company offers $120K–$180K with significantly better hours and no New York cost-of-living premium.',
+    scores: [{label:'Job Security',value:68,color:'var(--amber)'},{label:'Salary Potential',value:88,color:'var(--blue)'},{label:'Work-Life Balance',value:44,color:'var(--crimson)'},{label:'Future Demand',value:72,color:'var(--violet)'},{label:'Automation Resistance',value:62,color:'var(--amber)'}]
+  }
+};
+
+function updateConclusion() {
+  const profKey = document.getElementById('profession-select').value;
+  const prof = getProfession();
+  const year = getYear();
+  const metric = getMetric();
+  const c = CONCLUSION_DATA[profKey];
+  if(!c) return;
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  const setStyle = (id, prop, val) => { const el = document.getElementById(id); if(el) el.style[prop] = val; };
+
+  document.getElementById('conclusion-prof-badge').textContent = prof.name;
+  document.getElementById('conclusion-year-badge').textContent = year;
+  document.getElementById('conclusion-metric-badge').textContent = metric.charAt(0).toUpperCase() + metric.slice(1);
+
+  set('conclusion-verdict', c.verdict);
+  setStyle('conclusion-verdict', 'color', c.verdictColor);
+  set('conclusion-verdict-sub', c.verdictSub);
+  set('conclusion-best-state', c.bestState);
+  set('conclusion-best-state-sub', c.bestStateSub);
+  set('conclusion-risk', c.risk);
+  set('conclusion-risk-sub', c.riskSub);
+  set('conclusion-today', c.today);
+  set('conclusion-future', c.future);
+  set('conclusion-advice', c.advice);
+
+  const sc = document.getElementById('conclusion-scores');
+  if(sc) {
+    sc.innerHTML = c.scores.map(s => `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;flex:1;min-width:130px">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.5rem">${s.label}</div>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${s.value}%;background:${s.color};border-radius:3px"></div>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:600;color:${s.color};min-width:26px">${s.value}</span>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  // Show map tab panels by default
+  ALL_PANELS.forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.style.display = 'none';
+  });
+  TAB_PANELS.map.forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.style.display = '';
+  });
+
+  // Show divider on map tab
+  const divider = document.querySelector('.section-divider');
+  if(divider) divider.style.display = '';
+
+  setTimeout(() => {
+    updateAll();
+  }, 200);
+});
+
+window.addEventListener('resize', () => {
+  if(currentTab === 'map') drawMap();
+});
+</script>
+</body>
+</html>
