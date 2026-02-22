@@ -1,4 +1,4 @@
-# CareerLens 
+# Vocation Tangent
 A workforce intelligence platform we built. The idea is simple — the U.S. job market has decades of public data sitting around (BLS, O*NET) that most people never actually look at. We wanted to make it actually useful and visual, not just a bunch of CSV files.
 
 ---
