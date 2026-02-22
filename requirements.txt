@@ -1,4 +1,9 @@
 fastapi
 uvicorn
 google-genai
-actiancortex
+pandas
+openpyxl
+protobuf>=6.31.1
+grpcio>=1.68.1
+grpcio-tools>=1.68.1
+actiancortex @ https://github.com/gayatrimb12/hacklytics_careerlens/raw/main/actiancortex-0.1.0b1-py3-none-any.whl
