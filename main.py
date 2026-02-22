@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -7,19 +8,22 @@ import uvicorn
 
 app = FastAPI(title="CareerLens AI Backend")
 
-# ── CORS (allows your Claude-hosted frontend to call this API) ──
+# ── CORS ──
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your actual frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Config ──
-GEMINI_API_KEY = "AIzaSyD2VImncWOLisog_nmFfHIyziBUUe-6pI4"
-ACTIAN_HOST = "localhost:50051"
+# ── Config (keys from environment variables — never hardcoded) ──
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+ACTIAN_HOST = os.environ.get("ACTIAN_HOST", "localhost:50051")
 COLLECTION_NAME = "jobs"
+
+if not GEMINI_API_KEY:
+    raise RuntimeError("GEMINI_API_KEY environment variable is not set!")
 
 # ── Request Models ──
 class AskRequest(BaseModel):
@@ -52,14 +56,9 @@ def root():
 
 @app.post("/ask")
 async def ask_gemini(req: AskRequest):
-    """
-    Takes a user question + context (profession, year, metric)
-    and returns a real Gemini API response.
-    """
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
 
-        # Build a rich system prompt with context
         system_prompt = f"""You are a U.S. workforce intelligence analyst with deep expertise in 
 Bureau of Labor Statistics (BLS) data, occupational employment statistics, and labor market trends 
 from 2005 to 2030. You have access to data covering all 50 U.S. states across 10 professions.
@@ -103,15 +102,9 @@ demand growth patterns, and career trajectory insights."""
 
 @app.post("/vector-search")
 async def vector_search(req: VectorSearchRequest):
-    """
-    Takes a profession + year, generates an embedding via Gemini,
-    then searches Actian VectorAI DB for similar historical job matches.
-    """
     try:
-        # Step 1: Create query text from profession + year
         query_text = f"Job profession: {req.profession}. Year: {req.year}. Career trajectory and salary growth patterns."
 
-        # Step 2: Embed the query using Gemini
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
         embed_result = gemini_client.models.embed_content(
             model="gemini-embedding-001",
@@ -119,7 +112,6 @@ async def vector_search(req: VectorSearchRequest):
         )
         query_vector = list(embed_result.embeddings[0].values)
 
-        # Step 3: Search Actian VectorAI
         with CortexClient(ACTIAN_HOST) as cortex:
             results = cortex.search(
                 collection_name=COLLECTION_NAME,
@@ -127,7 +119,6 @@ async def vector_search(req: VectorSearchRequest):
                 limit=req.top_k
             )
 
-        # Step 4: Format results
         formatted = []
         for i, r in enumerate(results):
             formatted.append({
@@ -156,7 +147,6 @@ async def vector_search(req: VectorSearchRequest):
 
 @app.post("/embed")
 async def embed_text(req: EmbedRequest):
-    """Utility endpoint: embed any text using Gemini."""
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         result = client.models.embed_content(
@@ -175,3 +165,4 @@ async def embed_text(req: EmbedRequest):
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
